@@ -1,9 +1,11 @@
 ---
-title: "malariaAnalysis"
-author: "Aman Shaik"
+title: "dengueAnalysis"
+author: "Aman Shaik, Nick Huberty, Tom Suo, Connor Lee"
 date: "2025-10-07"
 output: html_document
 ---
+
+### Our group was initially interested in exploring Public Health-related datasets due to our desire of exploring geospatial details of disease and how that affects different geographies. COVID-19 was a huge influence to us wanting to experiment with another form of health concern. This specific dataset includes cases of the Dengue Fever in the city of Merida, from 2012 to 2015, and outlines the coordinates of where every case specifically took place. Through our analysis, we plan on visualizing how the Dengue Fever has spread across Merida over a four-year period, and how it can help inform how diseases typically spread in urban environments.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -33,7 +35,7 @@ plot(data$X, data$Y,
 ggplot(data, aes(x = X, y = Y, color = Den2012)) +
   geom_point(size = 3) +
   scale_color_viridis_c(option = "plasma") +
-  labs(title = "Malaria Density (2012)",
+  labs(title = "Dengue Fever Density (2012)",
        x = "X Coordinate", y = "Y Coordinate",
        color = "Density") +
   theme_minimal()
