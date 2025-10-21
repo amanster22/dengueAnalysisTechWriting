@@ -65,3 +65,61 @@ ggplot(data, aes(x = X, y = Y, color = Den2012)) +
   theme_minimal()
 
 ```
+
+
+This interactive plot visualizes the density and geographic spread of Dengue Fever cases in Merida, Mexico, from 2012 to 2015. The animation reveals a dynamic pattern: the outbreaks in 2012 and 2013 were diversely concentrated across the city. From 2014 onwards, there were far fewer hotspots. However, while the 2015 outbreak appears less widespread, the data indicates a significant spike in total cases from the previous year, suggesting that the remaining hotspots became much more intense.
+```{r mapping_ggplot}
+library(plotly)
+library(tidyr)
+
+data <- read.csv('Merida_Den12_13_14_15.csv')
+
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Den"),
+    names_to = "Year",
+    names_prefix = "Den",
+    values_to = "Cases"
+  ) %>%
+  mutate(Year = as.integer(Year))
+
+fig <- plot_ly(
+  data_long,
+  x = ~X,
+  y = ~Y,
+  frame = ~Year,
+  type = 'scatter',
+  mode = 'markers',
+  marker = list(
+    size = 10,
+    color = ~Cases,
+    colorscale = list(c(0, 1), c("grey", "red")),
+    showscale = TRUE,
+    colorbar = list(title = "Case Count")
+  ),
+  text = ~paste("Year: ", Year, "<br>Cases: ", Cases),
+  hoverinfo = 'text'
+)
+
+fig <- fig %>%
+  layout(
+    title = 'Dengue Fever Density in Merida (2012-2015)',
+    xaxis = list(title = 'X Coordinate'),
+    yaxis = list(title = 'Y Coordinate'),
+    plot_bgcolor = "#f0f0f0",
+    paper_bgcolor = "#f0f0f0"
+  ) %>%
+  animation_opts(
+    frame = 1500,
+    transition = 500,
+    easing = "linear"
+  ) %>%
+  animation_slider(
+    currentvalue = list(
+      prefix = "Year: ",
+      font = list(color = "red")
+    )
+  )
+
+fig
+```
