@@ -13,12 +13,48 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r data_loading}
 library(ggplot2)
+library(dplyr)
+library(tidyverse)
 data <- read.csv('Merida_Den12_13_14_15.csv')
 head(data)
 ```
 
 ```{r summary}
 summary(data)
+```
+
+```{r}
+# This plot shows the number of Dengue Fever cases in the city of Merida from 2012 to 2015, while also highlighting the Year-over-Year percent change of Dengue Fever cases from the previous year. Dengue Fever clearly has the highest amount of cases in 2012, however, sees a ~50% drop in cases in the following 2013 year. The number of cases still drops going into 2014, however, the number of cases spikes up by almost 200% from 2014 to 2015. This drastic increase in Dengue Fever cases in 2015 can lead us to believe that some sort of environmental or external effect led to cases going up to nearly 75,000. We could also hypothesize that outbreaks typically last around three years, before another outbreak starts.
+
+data_formatted <- data %>%
+  pivot_longer(
+    cols = starts_with("Den"),
+    names_to = "Year",
+    values_to = "Count"
+  ) %>%
+  mutate(Year = as.numeric(gsub("Den", "", Year)))
+
+data_summary <- data_formatted %>%
+  group_by(Year) %>%
+  summarise(
+    total_dengue = sum(Count, na.rm = TRUE))%>%
+  arrange(Year) %>%
+  mutate(
+    percent_change = (total_dengue - lag(total_dengue))/lag(total_dengue) * 100
+  )
+
+ggplot(data_summary, aes(x = Year)) +
+  geom_line(aes(y = percent_change * 100), color = "red", size = 1.2) +
+  scale_y_continuous(
+    name = "Total Dengue Cases",
+    sec.axis = sec_axis(~./100, name = "% Change from Previous Year")
+  ) +
+  geom_col(aes(y=total_dengue), fill = "blue")+
+  theme_minimal(base_size = 12) +
+  labs(
+    title = "Total Dengue Cases and Year-over-Year % Change in Merida",
+    x = "Year"
+  )
 ```
 
 ```{r mapping_plot} 
