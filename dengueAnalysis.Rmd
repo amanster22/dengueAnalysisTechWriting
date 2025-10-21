@@ -69,7 +69,7 @@ library(ggplot2)
 # 1️ Read file
 library(sf)
 
-town_map <- st_read("~/Desktop/dengueAnalysisTechWriting/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 st_crs(town_map)
 disease_data <- read.csv('Merida_Den12_13_14_15.csv')
 
