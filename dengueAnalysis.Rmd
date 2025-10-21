@@ -141,7 +141,7 @@ fig <- plot_ly(
   # Include coordinates + year + case count in hover
   text = ~paste(
     "Year:", Year,
-    "<br>Cases:", Cases,
+    #"<br>Cases:", Cases,
     "<br>X:", round(X, 2),
     "<br>Y:", round(Y, 2)
   ),
