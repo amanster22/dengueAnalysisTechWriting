@@ -5,23 +5,50 @@ date: "2025-10-07"
 output: html_document
 ---
 
-### Our group was initially interested in exploring Public Health-related datasets due to our desire of exploring geospatial details of disease and how that affects different geographies. COVID-19 was a huge influence to us wanting to experiment with another form of health concern. This specific dataset includes cases of the Dengue Fever in the city of Merida, from 2012 to 2015, and outlines the coordinates of where every case specifically took place. Through our analysis, we plan on visualizing how the Dengue Fever has spread across Merida over a four-year period, and how it can help inform how diseases typically spread in urban environments.
+### 1. Introduction
+
+Our group was initially interested in exploring Public Health-related datasets due to our desire of exploring geospatial details of disease and how that affects different geographies. COVID-19 was a huge influence to us wanting to experiment with another form of health concern. This specific dataset includes cases of the Dengue Fever in the city of Merida, from 2012 to 2015, and outlines the coordinates of where every case specifically took place. Through our analysis, we plan on visualizing how the Dengue Fever has spread across Merida over a four-year period, and how it can help inform how diseases typically spread in urban environments.
+
+### 2. Setup and Data Loading
+
+This section's primary goal is to load our dataset, `Merida_Den12_13_14_15.csv`, into the R environment. To accomplish this, and to equip our notebook for the complex analysis that follows, we first load a complete suite of R packages. We load the **`tidyverse`** package, which provides core tools like **`dplyr`** for data transformation and **`ggplot2`** for static visualization. For our more advanced interactive plots, we load **`plotly`** (used for the animated density map) and **`leaflet`** (used for the interactive Year-over-Year map). We also include **`sf`** to read and handle the simple features (geospatial) data for Merida. Once all libraries are loaded, we use the `read.csv()` function to import the dataset into a data frame and verify its contents and structure.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r data_loading}
-library(ggplot2)
-library(dplyr)
 library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(leaflet) 
+library(sf) 
+library(htmltools)
+library(scales)
+
 data <- read.csv('Merida_Den12_13_14_15.csv')
+
 head(data)
 ```
 
-```{r summary}
-summary(data)
+### 3. Data Cleaning and Transformation
+
+```{r}
+data_cleaned <- data %>%
+  select(X, Y, starts_with("Den"))
+na_counts <- colSums(is.na(data_cleaned))
+print(na_counts)
+head(data_cleaned)
 ```
+
+Data Cleaning is a crucial step to ensure the integrity and relevance of the data prior to our analysis. IWe want to ensure that all the data required for this project is clean, validated, and standardized so that our group can create data visualizations using the shared data.
+
+The raw dataset contains several columns, including SP_ID and GEOID, which serve as identifiers for position and case record. After discussing the goals for the project, we determined that our exploratory analysis is focused exclusively on the relationship between spatial coordinates and case counts. Therefore the important features for this analysis are the X and Y coordinates and the annual case count columns (Den2012 through Den2015). The SP_ID and GEOID columns, while potentially useful for future work (e.g., joining with demographic or census data), are not required for our current visualization and modeling objectives. Therefore, we dropped the project's irrelevant columns creating a standard data frame named data_cleaned.
+
+The second important step is to check for missing data. Missing data can introduce significant bias, propagate errors in calculations, and cause visualization failures. The R console output confirms that all columns returned a count of "0". This is an important finding, as it validates the completeness of our dataset. We can therefore proceed with our analysis without the need for data imputation or row-wise deletion, ensuring that our results are based on the full set of observations.
+
+### 4. Exploratory Analysis 1: Aggregate City-Wide Trends - can rename
 
 ```{r}
 # This plot shows the number of Dengue Fever cases in the city of Merida from 2012 to 2015, while also highlighting the Year-over-Year percent change of Dengue Fever cases from the previous year. Dengue Fever clearly has the highest amount of cases in 2012, however, sees a ~50% drop in cases in the following 2013 year. The number of cases still drops going into 2014, however, the number of cases spikes up by almost 200% from 2014 to 2015. This drastic increase in Dengue Fever cases in 2015 can lead us to believe that some sort of environmental or external effect led to cases going up to nearly 75,000. We could also hypothesize that outbreaks typically last around three years, before another outbreak starts.
@@ -57,7 +84,9 @@ ggplot(data_summary, aes(x = Year)) +
   )
 ```
 
-```{r mapping_plot} 
+### 5. Exploratory Analysis 2: Static Geospatial Patterns - can rename
+
+```{r mapping_plot}
 #maybe overlay the map of the location
 # This plot shows the geospatial location of dengue incidence in Merida, Mexico. We can potentially aesthetically improve this plot later using QGIS or ArcGIS.
 plot(data$X, data$Y, 
@@ -102,24 +131,9 @@ ggplot(data, aes(x = X, y = Y, color = Den2012)) +
 
 ```
 
+This interactive plot visualizes the density and geographic spread of Dengue Fever cases in Merida, Mexico, from 2012 to 2015. The animation reveals a dynamic pattern: the outbreaks in 2012 and 2013 were diversely concentrated across the city. From 2014 onwards, there were far fewer hotspots. However, while the 2015 outbreak appears less widespread, the data indicates a significant spike in total cases from the previous year, suggesting that the remaining hotspots became much more intense. \### 6. Exploratory Analysis 3: Animated Spatial-Temporal Trends - can rename
 
-This interactive plot visualizes the density and geographic spread of Dengue Fever cases in Merida, Mexico, from 2012 to 2015. The animation reveals a dynamic pattern: the outbreaks in 2012 and 2013 were diversely concentrated across the city. From 2014 onwards, there were far fewer hotspots. However, while the 2015 outbreak appears less widespread, the data indicates a significant spike in total cases from the previous year, suggesting that the remaining hotspots became much more intense.
 ```{r mapping_ggplot}
-library(plotly)
-library(tidyr)
-library(dplyr)
-
-data <- read.csv('Merida_Den12_13_14_15.csv')
-
-data_long <- data %>%
-  pivot_longer(
-    cols = starts_with("Den"),
-    names_to = "Year",
-    names_prefix = "Den",
-    values_to = "Cases"
-  ) %>%
-  mutate(Year = as.integer(Year))
-
 fig <- plot_ly(
   data_long,
   x = ~X,
@@ -127,34 +141,29 @@ fig <- plot_ly(
   frame = ~Year,
   type = 'scatter',
   mode = 'markers',
+  color = ~Cases,
+  colors = "Reds",
+  cmin = 0,                    # ✅ global lower bound
+  cmax = global_max_cases,     # ✅ global upper bound
   marker = list(
     size = 10,
-    color = ~Cases,  # color corresponds directly to number of cases
-    colorscale = list(
-      list(0, "lightgrey"),
-      list(1, "red")
-    ),
-    showscale = TRUE,
-    colorbar = list(title = "Case Count"),
-    line = list(width = 0)  # removes border around points for cleaner look
+    line = list(width = 0)
   ),
-  # Include coordinates + year + case count in hover
   text = ~paste(
     "Year:", Year,
-    #"<br>Cases:", Cases,
+    "<br>Cases:", Cases,
     "<br>X:", round(X, 2),
     "<br>Y:", round(Y, 2)
   ),
   hoverinfo = 'text'
-)
-
-fig <- fig %>%
+) %>%
+  colorbar(title = "Case Count") %>%
   layout(
     title = 'Dengue Fever Density in Merida (2012–2015)',
     xaxis = list(title = 'X Coordinate'),
     yaxis = list(title = 'Y Coordinate'),
-    plot_bgcolor = "#f0f0f0",
-    paper_bgcolor = "#f0f0f0"
+    plot_bgcolor = "lightgrey",
+    paper_bgcolor = "lightgrey"
   ) %>%
   animation_opts(
     frame = 1500,
@@ -170,7 +179,16 @@ fig <- fig %>%
 
 fig
 
+
 ```
+
+While static maps are effective for visualizing spatial distribution at a single point in time, they are insufficient for understanding the outbreak's temporal dynamics. To observe the evolution of dengue hotspots from 2012 to 2015, an animated visualization is required. This section details the creation and interpretation of an interactive plot designed to reveal these year-over-year changes in disease density across Merida. The plotly library, which we use to build this animation, requires data in a "long" format. Therefore, our first step in this section is to transform the data using pivot_longer(), converting our "wide" table into a "long" one suitable for time-series animation.
+
+The resulting interactive plot sequences the data by year, allowing for a direct comparison of spatial patterns. The animation begins in 2012, revealing a significant outbreak. We can clearly identify two primary hotspots with case counts exceeding 100. Critically, these hotspots are not isolated; they are surrounded by numerous adjacent locations reporting nearly 50 cases, indicating a concentrated and widespread initial event. Moving to 2013, the visualization shows a dramatic city-wide reduction in dengue incidence. There are far fewer cases overall, with no single region reporting over 100 cases and only a handful approaching 50. The landscape is dominated by low-incidence areas, suggesting the outbreak has subsided. This trend continues into 2014, which shows an even more pronounced decline. The vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
+
+The final frame, 2015, illustrates a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Furthermore, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each. This visualization powerfully supports the principle of spatial autocorrelation in epidemiology; the 2015 outbreak demonstrates that new high-incidence areas are highly likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread.
+
+### 7. Exploratory Analysis 4: Analyzing Year-over-Year (YoY) Change - can rename
 
 ```{r YOY analysis}
 library(dplyr)
@@ -310,4 +328,4 @@ m <- leaflet(data_sf_wgs84) %>%
 m
 ```
 
-
+### 8. Conclusion and Future Questions
