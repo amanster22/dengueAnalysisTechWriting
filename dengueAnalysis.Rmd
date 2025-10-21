@@ -171,3 +171,143 @@ fig <- fig %>%
 fig
 
 ```
+
+```{r YOY analysis}
+library(dplyr)
+library(sf)
+library(leaflet)
+library(htmltools)
+library(scales)
+
+# 1. Calculate Year-over-Year (YoY) percentage change
+# We must handle cases where the denominator (previous year) is 0.
+calculate_yoy <- function(current, previous) {
+  case_when(
+    previous == 0 & current == 0 ~ 0,  # 0 to 0 is 0% change
+    previous == 0 & current > 0 ~ Inf, # 0 to N is infinite % change
+    previous > 0 ~ (current - previous) / previous
+  )
+}
+
+data_yoy <- data %>%
+  mutate(
+    YoY_2013 = calculate_yoy(Den2013, Den2012),
+    YoY_2014 = calculate_yoy(Den2014, Den2013),
+    YoY_2015 = calculate_yoy(Den2015, Den2014)
+  )
+
+# 2. Clean up Inf/-Inf/NaN values for visualization. We'll set Inf to NA.
+data_yoy <- data_yoy %>%
+  mutate(across(starts_with("YoY_"), ~if_else(is.finite(.), ., NA_real_)))
+
+# 3. Convert to a geospatial 'sf' object and transform coordinates
+# The .prj file (EPSG:6371) tells us this is Mexico ITRF2008 / UTM zone 16N.
+# Leaflet requires standard WGS84 (EPSG:4326) coordinates (lat/lon).
+data_sf <- st_as_sf(data_yoy, coords = c("X", "Y"), crs = 6371)
+data_sf_wgs84 <- st_transform(data_sf, crs = 4326)
+
+# 4. Define a diverging color palette
+# We cap the domain from -1 (-100%) to 2 (200%) to handle outliers
+cap_range <- c(-1, 2)
+pal_yoy <- colorNumeric(
+  palette = "RdYlBu", 
+  domain = cap_range, 
+  na.color = "#a0a0a0",
+  reverse = TRUE # Make red positive (increase), blue negative (decrease)
+)
+
+# 5. Create formatted popup and label content
+# Popups appear on click
+popup_2013 <- ~lapply(sprintf(
+  "<strong>Location ID: %s</strong><br/>2012 Cases: %d<br/>2013 Cases: %d<br/>YoY Change: %s",
+  SP_ID, Den2012, Den2013, scales::percent(YoY_2013, accuracy = 0.1)
+), HTML)
+
+popup_2014 <- ~lapply(sprintf(
+  "<strong>Location ID: %s</strong><br/>2013 Cases: %d<br/>2014 Cases: %d<br/>YoY Change: %s",
+  SP_ID, Den2013, Den2014, scales::percent(YoY_2014, accuracy = 0.1)
+), HTML)
+
+popup_2015 <- ~lapply(sprintf(
+  "<strong>Location ID: %s</strong><br/>2014 Cases: %d<br/>2015 Cases: %d<br/>YoY Change: %s",
+  SP_ID, Den2014, Den2015, scales::percent(YoY_2015, accuracy = 0.1)
+), HTML)
+
+# Labels appear on hover
+label_2013 <- ~scales::percent(YoY_2013, accuracy = 0.1)
+label_2014 <- ~scales::percent(YoY_2014, accuracy = 0.1)
+label_2015 <- ~scales::percent(YoY_2015, accuracy = 0.1)
+```
+
+```{r interactive_map}
+# Create the interactive leaflet map
+m <- leaflet(data_sf_wgs84) %>%
+  # Add base map layers
+  addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  
+  # Set the map to focus on the data
+  fitBounds(
+    ~as.numeric(st_bbox(geometry)[1]),
+    ~as.numeric(st_bbox(geometry)[2]),
+    ~as.numeric(st_bbox(geometry)[3]),
+    ~as.numeric(st_bbox(geometry)[4])
+  ) %>%
+
+  # ==== Layer 1: 2013 vs 2012 ====
+  addCircleMarkers(
+    group = "2013 vs 2012",
+    color = ~pal_yoy(YoY_2013),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2013,
+    label = label_2013
+  ) %>%
+  
+  # ==== Layer 2: 2014 vs 2013 ====
+  addCircleMarkers(
+    group = "2014 vs 2013",
+    color = ~pal_yoy(YoY_2014),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2014,
+    label = label_2014
+  ) %>%
+
+  # ==== Layer 3: 2015 vs 2014 ====
+  addCircleMarkers(
+    group = "2015 vs 2014",
+    color = ~pal_yoy(YoY_2015),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2015,
+    label = label_2015
+  ) %>%
+  
+  # ==== Legend ====
+  addLegend(
+    pal = pal_yoy,
+    values = cap_range,
+    title = "YoY % Change",
+    position = "bottomright",
+    labFormat = labelFormat(suffix = "%", transform = function(x) x * 100),
+    opacity = 1
+  ) %>%
+
+  # ==== Layer Control ====
+  # This provides radio buttons to select one year-period at a time,
+  # fulfilling the "slider" request to select a year.
+  addLayersControl(
+    baseGroups = c("2013 vs 2012", "2014 vs 2013", "2015 vs 2014"),
+    overlayGroups = c("Light Map", "Satellite"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+# Display the map
+m
+```
+
+
