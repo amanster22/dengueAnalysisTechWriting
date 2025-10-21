@@ -71,6 +71,7 @@ This interactive plot visualizes the density and geographic spread of Dengue Fev
 ```{r mapping_ggplot}
 library(plotly)
 library(tidyr)
+library(dplyr)
 
 data <- read.csv('Merida_Den12_13_14_15.csv')
 
@@ -92,18 +93,28 @@ fig <- plot_ly(
   mode = 'markers',
   marker = list(
     size = 10,
-    color = ~Cases,
-    colorscale = list(c(0, 1), c("grey", "red")),
+    color = ~Cases,  # color corresponds directly to number of cases
+    colorscale = list(
+      list(0, "lightgrey"),
+      list(1, "red")
+    ),
     showscale = TRUE,
-    colorbar = list(title = "Case Count")
+    colorbar = list(title = "Case Count"),
+    line = list(width = 0)  # removes border around points for cleaner look
   ),
-  text = ~paste("Year: ", Year, "<br>Cases: ", Cases),
+  # Include coordinates + year + case count in hover
+  text = ~paste(
+    "Year:", Year,
+    "<br>Cases:", Cases,
+    "<br>X:", round(X, 2),
+    "<br>Y:", round(Y, 2)
+  ),
   hoverinfo = 'text'
 )
 
 fig <- fig %>%
   layout(
-    title = 'Dengue Fever Density in Merida (2012-2015)',
+    title = 'Dengue Fever Density in Merida (2012–2015)',
     xaxis = list(title = 'X Coordinate'),
     yaxis = list(title = 'Y Coordinate'),
     plot_bgcolor = "#f0f0f0",
@@ -122,4 +133,5 @@ fig <- fig %>%
   )
 
 fig
+
 ```
