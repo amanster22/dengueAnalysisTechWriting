@@ -29,6 +29,27 @@ plot(data$X, data$Y,
      xlab = "X Coordinate", 
      ylab = "Y Coordinate", 
      pch = 19, col = "blue")
+library(ggplot2)
+# 1️ Read file
+library(sf)
+
+town_map <- st_read("C:/Users/pompo/OneDrive/Documents/GitHub/dengueAnalysisTechWriting/Merida_S25/Merida_Den12_13_14_15")
+st_crs(town_map)
+disease_data <- read.csv('Merida_Den12_13_14_15.csv')
+
+# make sure CRS is same, convert to sf
+disease_sf <- st_as_sf(disease_data, coords = c("X", "Y"), crs = st_crs(town_map))
+names(disease_data)
+
+# 4 generate plot
+ggplot() +
+  geom_sf(data = town_map, fill = "gray95", color = "black", linewidth = 0.3) +
+  geom_sf(data = disease_sf, aes(color = Den2012, size = Den2012)) +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Spatial Locations",
+       color = "Incidence",
+       size = "Incidence")
 
 ```
 
