@@ -185,15 +185,126 @@ The interactive plot displays the number of cases in their regions by year, allo
 
 When analyzing 2015 we can see a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Additionally, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each. To sum up, this visualization demonstrates that disease spread in this urban environment is not random, but rather persistent and spatially clustered in specific, identifiable high-risk zones. The 2015 outbreak also demonstrates that new high-incidence areas are likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread.
 
+### 6.5 combining 5 and 6 into 1 section
+
+```{r 6.5}
+# 1. Convert data to sf and transform to WGS84 for Leaflet
+# We use EPSG:6371 as identified in the original Section 7
+data_sf <- st_as_sf(data, coords = c("X", "Y"), crs = 6371)
+data_sf_wgs84 <- st_transform(data_sf, crs = 4326)
+
+# 2. Load and transform the neighborhood shapefile
+town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
+
+# 3. Create a sequential color palette for absolute cases
+# We find the global max to keep the scale consistent across years
+all_cases <- c(data_sf_wgs84$Den2012, data_sf_wgs84$Den2013, data_sf_wgs84$Den2014, data_sf_wgs84$Den2015)
+global_max_cases <- max(all_cases, na.rm = TRUE)
+pal_cases <- colorNumeric(
+  palette = "Reds",
+  domain = c(0, global_max_cases),
+  na.color = "#a0a0a0"
+)
+
+# 4. Create popups for each year
+popup_2012 <- ~lapply(sprintf("<strong>ID: %s</strong><br/>2012 Cases: %d", SP_ID, Den2012), HTML)
+popup_2013 <- ~lapply(sprintf("<strong>ID: %s</strong><br/>2013 Cases: %d", SP_ID, Den2013), HTML)
+popup_2014 <- ~lapply(sprintf("<strong>ID: %s</strong><br/>2014 Cases: %d", SP_ID, Den2014), HTML)
+popup_2015 <- ~lapply(sprintf("<strong>ID: %s</strong><br/>2015 Cases: %d", SP_ID, Den2015), HTML)
+
+# 5. Create the interactive leaflet map
+m_cases <- leaflet(data_sf_wgs84) %>%
+  # Add base map layers
+  addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  
+  # Add Neighborhoods layer
+  addPolygons(
+    data = town_map_wgs84,
+    group = "Neighborhoods",
+    fillOpacity = 0.1,
+    color = "#444",
+    weight = 1,
+    opacity = 0.7,
+    popup = ~SP_ID
+  ) %>%
+  
+  # Set the map to focus on the data
+  fitBounds(
+    ~as.numeric(st_bbox(geometry)[1]),
+    ~as.numeric(st_bbox(geometry)[2]),
+    ~as.numeric(st_bbox(geometry)[3]),
+    ~as.numeric(st_bbox(geometry)[4])
+  ) %>%
+
+  # ==== Layer 1: 2012 Cases ====
+  addCircleMarkers(
+    group = "2012 Cases",
+    color = ~pal_cases(Den2012),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2012,
+    label = ~as.character(Den2012)
+  ) %>%
+  
+  # ==== Layer 2: 2013 Cases ====
+  addCircleMarkers(
+    group = "2013 Cases",
+    color = ~pal_cases(Den2013),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2013,
+    label = ~as.character(Den2013)
+  ) %>%
+  
+  # ==== Layer 3: 2014 Cases ====
+  addCircleMarkers(
+    group = "2014 Cases",
+    color = ~pal_cases(Den2014),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2014,
+    label = ~as.character(Den2014)
+  ) %>%
+  
+  # ==== Layer 4: 2015 Cases ====
+  addCircleMarkers(
+    group = "2015 Cases",
+    color = ~pal_cases(Den2015),
+    fillOpacity = 0.8,
+    stroke = FALSE,
+    radius = 5,
+    popup = popup_2015,
+    label = ~as.character(Den2015)
+  ) %>%
+  
+  # ==== Legend ====
+  addLegend(
+    pal = pal_cases,
+    values = c(0, global_max_cases),
+    title = "Case Count",
+    position = "bottomright",
+    opacity = 1
+  ) %>%
+
+  # ==== Layer Control ====
+  addLayersControl(
+    baseGroups = c("2012 Cases", "2013 Cases", "2014 Cases", "2015 Cases"),
+    overlayGroups = c("Light Map", "Satellite", "Neighborhoods"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+# Display the map
+m_cases
+```
+
 ### 7. Exploratory Analysis 4: Analyzing Year-over-Year (YoY) Change - can rename
 
 ```{r YOY analysis}
-library(dplyr)
-library(sf)
-library(leaflet)
-library(htmltools)
-library(scales)
-
 # 1. Calculate Year-over-Year (YoY) percentage change
 # We must handle cases where the denominator (previous year) is 0.
 calculate_yoy <- function(current, previous) {
@@ -255,11 +366,26 @@ label_2015 <- ~scales::percent(YoY_2015, accuracy = 0.1)
 ```
 
 ```{r interactive_map}
+# Load and transform the neighborhood shapefile
+town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
+
 # Create the interactive leaflet map
 m <- leaflet(data_sf_wgs84) %>%
   # Add base map layers
   addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  
+  # Add Neighborhoods layer
+  addPolygons(
+    data = town_map_wgs84,
+    group = "Neighborhoods",
+    fillOpacity = 0.1,
+    color = "#444",
+    weight = 1,
+    opacity = 0.7,
+    popup = ~~SP_ID
+  ) %>%
   
   # Set the map to focus on the data
   fitBounds(
@@ -313,11 +439,9 @@ m <- leaflet(data_sf_wgs84) %>%
   ) %>%
 
   # ==== Layer Control ====
-  # This provides radio buttons to select one year-period at a time,
-  # fulfilling the "slider" request to select a year.
   addLayersControl(
     baseGroups = c("2013 vs 2012", "2014 vs 2013", "2015 vs 2014"),
-    overlayGroups = c("Light Map", "Satellite"),
+    overlayGroups = c("Light Map", "Satellite", "Neighborhoods"),
     options = layersControlOptions(collapsed = FALSE)
   )
 
