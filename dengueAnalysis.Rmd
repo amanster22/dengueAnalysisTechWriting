@@ -11,13 +11,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1. Introduction
 
-Our group was initially interested in exploring Public Health-related datasets due to our desire of exploring geospatial details of disease and how that affects different geographies. COVID-19 was a huge influence to us wanting to experiment with another form of health concern. This specific dataset includes cases of the Dengue Fever in the city of Merida, from 2012 to 2015, and outlines the coordinates of where every case specifically took place. Through our analysis, we plan on visualizing how the Dengue Fever has spread across Merida over a four-year period, and how it can help inform how diseases typically spread in urban environments.
+In this exploratory data analysis, our group examines Dengue Fever cases in the city of Mérida, Mexico, using data extracted from _______. Dengue Fever is a mosquito-borne viral infection caused by the dengue virus, which continues to pose a significant public health concern in tropical and subtropical regions.
 
-### 2. Setup and Data Loading
+Some of Dengue Fever’s most common symptoms include sudden drops in blood pressure, nausea, and muscle pain, similar to COVID-19 symptoms. Researchers have found that Merida, which is the capital of the state of Yucatán, experiences recurrent dengue outbreaks due to having a tropical climate, seasonal rainfall and standing water, and an urban population density. 
 
-Before developing any visualizations or analytical models, we must first prepare the R environment and load our primary dataset, “Merida_Den12_13_14_15.csv”. To accomplish this, and to equip our notebook for the complex analysis that follows, we first load a complete suite of R packages. We load the tidyverse package, which provides core tools like dplyr for data transformation and ggplot2 for static visualization. For our more advanced interactive plots, we load plotly (used for the animated density map) and leaflet (used for the interactive Year-over-Year map). We also include sf to read and handle the simple features (geospatial) data for Merida. Once all libraries are loaded, we use the read.csv() function to import the dataset into a data frame and verify its contents and structure.
+Our group was initially interested in exploring public health-related datasets, due to our shared experiences of living throughout the COVID-19 pandemic. We noticed how COVID-19 had similar symptoms to Dengue Fever and had similar effects in profoundly impacting communities worldwide, highlighting how infectious diseases can spread rapidly and sporadically across different regions. By being able to analyze a virus like Dengue Fever, our group can examine how a viral disease can be influenced by environmental and geographic factors.
 
+To elaborate more on the dataset, it is comprised of 540 rows, which are all distinctly different regions within Merida. Each region is quantified based on their coordinates from the Universal Transverse Mercator (UTM) system, a grid-based coordinate system used to map locations using meters. The dataset initially had 8 columns: the X and Y UTM coordinates of each region, SP_ID (an identifier for each region), CVEGEO (geographic identifier code used by the Mexican Geographic Agency), and the number of cases in each region across four different years (2012-2015). Later mentioned in the Data Cleaning step, SP_ID and CVEGEO are not necessary for our overall analysis. 
 
+### 2. Project Setup, Data Loading, and Data Cleaning
+
+Before developing any visualizations or analytical models, we prepared the R environment by loading our primary dataset, “Merida_Den12_13_14_15.csv,” along with a complete suite of R packages. We used the tidyverse package, which provides core tools like dplyr for data transformation and ggplot2 for static visualization. For our more advanced interactive plots, we loaded plotly (used for the animated density map) and leaflet (used for the interactive Year-over-Year map). We also included sf to read and handle the simple features (geospatial) data for Merida. Once all libraries were loaded, we imported the dataset into a data frame. The resulting data frame contained 540 rows and 8 columns, representing spatial identifiers, coordinate values, and annual Dengue case counts. This formed the foundation for our exploratory analysis.
+
+Data Cleaning is a crucial step to ensure the integrity and relevance of the data prior to our analysis. We want to ensure that all the data required for this project is clean, validated, and standardized so that our group can create data visualizations using the shared data.
+
+The raw dataset contains several columns, including SP_ID and CVEGEO, which serve as identifiers for position and case record. After discussing the goals for the project, we determined that our exploratory analysis is focused exclusively on the relationship between spatial coordinates and case counts. Therefore, the important features for this analysis are the X and Y coordinates and the annual case count columns (Den2012 through Den2015). The SP_ID and CVEGEOCVEGEO columns, while potentially useful for future work like joining with demographic or climate data, are not required for our current visualization and modeling goals. Therefore, we dropped the project's irrelevant columns, creating a standard data frame named data_cleaned.
+
+Next, we checked the dataframe for missing data because null values can introduce significant bias, propagate errors in calculations, and cause visualization failures. The R console output confirms that all columns returned 0 null values. This finding validates the completeness of our dataset, allowing us to proceed with our analysis without further cleaning procedures, ensuring our results are based on the full set of observations.
 
 ```{r data_loading}
 library(tidyverse)
@@ -34,8 +44,6 @@ data <- read.csv('Merida_Den12_13_14_15.csv')
 head(data)
 ```
 
-### 3. Data Cleaning and Transformation
-
 ```{r}
 data_cleaned <- data %>%
   select(X, Y, starts_with("Den"))
@@ -43,16 +51,12 @@ na_counts <- colSums(is.na(data_cleaned))
 print(na_counts)
 head(data_cleaned)
 ```
-Data Cleaning is a crucial step to ensure the integrity and relevance of the data prior to our analysis. We want to ensure that all the data required for this project is clean, validated, and standardized so that our group can create data visualizations using the shared data.
-The raw dataset contains several columns, including SP_ID and GEOID, which serve as identifiers for position and case record. After discussing the goals for the project, we determined that our exploratory analysis is focused exclusively on the relationship between spatial coordinates and case counts. Therefore, the important features for this analysis are the X and Y coordinates and the annual case count columns (Den2012 through Den2015). The SP_ID and GEOID columns, while potentially useful for future work (e.g., joining with demographic or census data), are not required for our current visualization and modeling goals. Therefore, we dropped the project's irrelevant columns, creating a standard data frame named data_cleaned.
-The second important step is to check for missing data. Missing data can introduce significant bias, propagate errors in calculations, and cause visualization failures. The R console output confirms that all columns returned a count of "0". This finding validates the completeness of our dataset and we can therefore proceed with our analysis without the need for data imputation or row-wise deletion, ensuring that our results are based on the full set of observations.
 
-
-
-
-### 4. Exploratory Analysis 1: Aggregate City-Wide Trends - can rename
+### 3. Exploratory Analysis 1: Aggregate City-Wide Trends - can rename
 
 ```{r}
+
+### Reorganize the dataset so each year's Dengue Fever count is stored as a separate row
 data_formatted <- data %>%
   pivot_longer(
     cols = starts_with("Den"),
@@ -61,6 +65,7 @@ data_formatted <- data %>%
   ) %>%
   mutate(Year = as.numeric(gsub("Den", "", Year)))
 
+### Summarize the total Dengue Fever cases per year and calculate Year-over-Year percent change
 data_summary <- data_formatted %>%
   group_by(Year) %>%
   summarise(
@@ -70,6 +75,7 @@ data_summary <- data_formatted %>%
     percent_change = (total_Dengue - lag(total_Dengue))/lag(total_Dengue) * 100
   )
 
+### Visualize total Dengue Fever cases per year and Year-over-Year percent change
 ggplot(data_summary, aes(x = Year)) +
   geom_line(aes(y = percent_change * 100), color = "red", size = 1.2) +
   scale_y_continuous(
@@ -90,7 +96,9 @@ Despite being able to visually see the fluctuations in volume of Dengue Fever ca
 
 The pertinence of this visualization is that it helps with public health tracking and surveillance. Despite being a more general statistical visualization, this graph can help track the trends of how quickly Dengue Fever is spreading in Merida, while also assessing the effectiveness of interventions in certain years, assuming that certain confounding variables are controlled for – other variables such as seasonal changes and weather variation could certainly impact our future findings. Ultimately, data tracking leads to action, and in the case of Dengue Fever, it can lead to mosquito control initiatives or vaccination campaigns. 
 
-### 5. Exploratory Analysis 2: Static Geospatial Patterns - can rename
+This initial analysis provides a strong foundation for conducting a geospatial analysis on where these Dengue Fever cases are specifically occurring.
+
+### 4. Exploratory Analysis 2: Static Geospatial Patterns - can rename
 
 ```{r mapping_plot}
 #maybe overlay the map of the location
@@ -124,7 +132,7 @@ ggplot() +
 
 ```
 
-### 6. Exploratory Analysis 3: Animated Spatial-Temporal Trends - can rename
+### 5. Exploratory Analysis 3: Animated Spatial-Temporal Trends - can rename
 
 ```{r mapping_ggplot}
 
@@ -185,14 +193,17 @@ fig <- plot_ly(
 fig
 ```
 
-We can further analyze the evolution Dengue virus over a period of time with an animated density chart. By using plotly, we can visualize high-density infected regions in red, compared to low-density infected regions in white, and due to the animation, can see the spread of the disease throughout the 2012-2015 timespan.
+We can further analyze the evolution Dengue virus in the Merida region over a period of time with an animated density chart. By using plotly, we can visualize high-density infected regions in red, compared to low-density infected regions in white, and due to the animation, can see the spread of the disease throughout the 2012-2015 timespan.
+
 When analyzing the density chart in 2012, we can see a significant outbreak as there are two primary hotspot regions with case counts exceeding 100. It is important to note that these hotspots are not isolated. They are surrounded by Dengue-infested locations reporting nearly 50 cases, indicating a concentrated and widespread initial event.
+
 If we advance to 2013, we can see a surprising city-wide reduction in Dengue incidence. There are far fewer cases overall, with no single region in Merida reporting over 100 cases and only a handful approaching 50 cases. Overall, the area is dominated by low-incidence areas, suggesting the outbreak has died down. This trend continues into 2014, which shows an even more pronounced decline as the vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
+
 However, when analyzing 2015, we can see a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Additionally, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each.
+
 To sum up, this visualization demonstrates that disease spread in this urban environment is not random, but rather persistent and spatially clustered in specific, identifiable high-risk zones. The 2015 outbreak also demonstrates that new high-incidence areas are likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread. 
 
-
-### Exploratory Analysis 4: Interactive Case Count Map
+### 6. Exploratory Analysis 4: Interactive Case Count Map
 
 ```{r}
 # 1. Convert data to sf and transform to WGS84 for Leaflet
