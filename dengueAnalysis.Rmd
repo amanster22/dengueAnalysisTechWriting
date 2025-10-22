@@ -5,6 +5,10 @@ date: "2025-10-07"
 output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ### 1. Introduction
 
 Our group was initially interested in exploring Public Health-related datasets due to our desire of exploring geospatial details of disease and how that affects different geographies. COVID-19 was a huge influence to us wanting to experiment with another form of health concern. This specific dataset includes cases of the Dengue Fever in the city of Merida, from 2012 to 2015, and outlines the coordinates of where every case specifically took place. Through our analysis, we plan on visualizing how the Dengue Fever has spread across Merida over a four-year period, and how it can help inform how diseases typically spread in urban environments.
@@ -13,9 +17,7 @@ Our group was initially interested in exploring Public Health-related datasets d
 
 Before developing any visualizations or analytical models, we must first prepare the R environment and load our primary dataset, “Merida_Den12_13_14_15.csv”. To accomplish this, and to equip our notebook for the complex analysis that follows, we first load a complete suite of R packages. We load the tidyverse package, which provides core tools like dplyr for data transformation and ggplot2 for static visualization. For our more advanced interactive plots, we load plotly (used for the animated density map) and leaflet (used for the interactive Year-over-Year map). We also include sf to read and handle the simple features (geospatial) data for Merida. Once all libraries are loaded, we use the read.csv() function to import the dataset into a data frame and verify its contents and structure.
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ```{r data_loading}
 library(tidyverse)
@@ -165,8 +167,8 @@ fig <- plot_ly(
     paper_bgcolor = "white"
   ) %>%
   animation_opts(
-    frame = 1500,
-    transition = 500,
+    frame = 3000,
+    transition = 800,
     easing = "linear"
   ) %>%
   animation_slider(
