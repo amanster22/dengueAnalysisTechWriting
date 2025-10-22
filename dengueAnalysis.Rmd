@@ -136,41 +136,43 @@ ggplot() +
 
 ```{r mapping_ggplot}
 
+# Reshape dataframe from wide to long format, each year becomes a separate row with 'Cases' column
 data_long <- data_cleaned %>%
   pivot_longer(
-    cols = starts_with("Den"),
-    names_to = "Year",
-    names_prefix = "Den",
-    values_to = "Cases" 
+    cols = starts_with("Den"),  # select all year columns
+    names_to = "Year",          # new column for year
+    names_prefix = "Den",       # remove 'Den' prefix
+    values_to = "Cases"         # new column for case counts
   ) %>%
+  # Convert year column to integer type
   mutate(Year = as.integer(Year))
 
-global_max_cases <- max(data_long$Cases)
-
-
-
+# Create animated scatter plot of Dengue cases
 fig <- plot_ly(
-  data_long,
-  x = ~X,
-  y = ~Y,
-  frame = ~Year,
-  type = 'scatter',
-  mode = 'markers',
-  color = ~Cases,
-  colors = "Reds",
+  data_long,       # use long-format dataframe
+  x = ~X,          # X coordinate
+  y = ~Y,          # Y coordinate
+  frame = ~Year,   # animate by year
+  type = 'scatter', 
+  mode = 'markers', 
+  color = ~Cases,  # color by case count
+  colors = "Reds", # color scale
   marker = list(
-    size = 10,
-    line = list(width = 0.5,color = 'black')
+    size = 10, 
+    line = list(width = 0.3, color = 'black') # add thin black border
   ),
+  # Add hover text with detailed info
   text = ~paste(
     "Year:", Year,
     "<br>Cases:", Cases,
     "<br>X:", round(X, 2),
     "<br>Y:", round(Y, 2)
   ),
-  hoverinfo = 'text'
+  hoverinfo = 'text'  # display hover text only
 ) %>%
+  # Add color bar to indicate case counts
   colorbar(title = "Case Count") %>%
+  # Update layout, axis titles, and background colors
   layout(
     title = 'Dengue Fever Density in Merida (2012–2015)',
     xaxis = list(title = 'X Coordinate'),
@@ -178,19 +180,23 @@ fig <- plot_ly(
     plot_bgcolor = "white",
     paper_bgcolor = "white"
   ) %>%
+  # Set animation speed and transition style
   animation_opts(
-    frame = 3000,
-    transition = 800,
-    easing = "linear"
+    frame = 3000,      # 3 seconds per frame
+    transition = 800,  # 0.8 second transition
+    easing = "linear"  # linear transition
   ) %>%
+  # Add animation slider for selecting year
   animation_slider(
     currentvalue = list(
-      prefix = "Year: ",
+      prefix = "Year: ", # label prefix
       font = list(color = "red")
     )
   )
 
+# Display the interactive animated plot
 fig
+
 ```
 
 We can further analyze the evolution Dengue virus in the Merida region over a period of time with an animated density chart. By using plotly, we can visualize high-density infected regions in red, compared to low-density infected regions in white, and due to the animation, can see the spread of the disease throughout the 2012-2015 timespan.
