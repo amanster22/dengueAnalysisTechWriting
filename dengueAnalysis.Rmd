@@ -53,8 +53,6 @@ The second important step is to check for missing data. Missing data can introdu
 ### 4. Exploratory Analysis 1: Aggregate City-Wide Trends - can rename
 
 ```{r}
-# This plot shows the number of Dengue Fever cases in the city of Merida from 2012 to 2015, while also highlighting the Year-over-Year percent change of Dengue Fever cases from the previous year. Dengue Fever clearly has the highest amount of cases in 2012, however, sees a ~50% drop in cases in the following 2013 year. The number of cases still drops going into 2014, however, the number of cases spikes up by almost 200% from 2014 to 2015. This drastic increase in Dengue Fever cases in 2015 can lead us to believe that some sort of environmental or external effect led to cases going up to nearly 75,000. We could also hypothesize that outbreaks typically last around three years, before another outbreak starts.
-
 data_formatted <- data %>%
   pivot_longer(
     cols = starts_with("Den"),
@@ -85,6 +83,12 @@ ggplot(data_summary, aes(x = Year)) +
     x = "Year"
   )
 ```
+
+When it comes to diseases, outbreaks, and other public health concerns, it is crucial to monitor the volume of cases to understand if the outbreak is being contained. Starting off as simply as possible, we created a first graph that summarizes the broader statistics of our Dengue Fever dataset in Merida – more specifically, we created a visualization that summarizes the amount of Dengue Fever cases from 2012 to 2015. This was conducted by grouping the cases by what year they were from, and then counting how many cases were in each year. The graph shows 2012 having the highest volume of Dengue Fever cases of almost 10,000, which has a significant dropoff in 2013. Following this trend, 2014 also sees a decline in total Dengue Fever cases, until another sharp increase of cases comes in 2015 of around 7,500 cases. 
+
+Despite being able to visually see the fluctuations in volume of Dengue Fever cases, our group decided to create a percent change, year-over-year, visualization over the same chart. This method of calculating percent change is useful in tracking the rate of increase or decrease of the Dengue Fever, which allows us to not only understand the spread of the disease, but how quickly it is spreading. By using geom_line in our visualization, the red line helps our audience understand the relative changes in Dengue Fever cases over the years. When the percent change is sharply negative, like in 2013 and 2014, that could indicate successful containment plans, while sharp positive changes in the red line could signal a public health crisis.
+
+The pertinence of this visualization is that it helps with public health tracking and surveillance. Despite being a more general statistical visualization, this graph can help track the trends of how quickly Dengue Fever is spreading in Merida, while also assessing the effectiveness of interventions in certain years, assuming that certain confounding variables are controlled for – other variables such as seasonal changes and weather variation could certainly impact our future findings. Ultimately, data tracking leads to action, and in the case of Dengue Fever, it can lead to mosquito control initiatives or vaccination campaigns. 
 
 ### 5. Exploratory Analysis 2: Static Geospatial Patterns - can rename
 
@@ -188,9 +192,9 @@ However, when analyzing 2015, we can see a powerful resurgence. While many areas
 To sum up, this visualization demonstrates that disease spread in this urban environment is not random, but rather persistent and spatially clustered in specific, identifiable high-risk zones. The 2015 outbreak also demonstrates that new high-incidence areas are likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread. 
 
 
-### 6.5 combining 5 and 6 into 1 section
+### Exploratory Analysis 4: Interactive Case Count Map
 
-```{r 6.5}
+```{r}
 # 1. Convert data to sf and transform to WGS84 for Leaflet
 # We use EPSG:6371 as identified in the original Section 7
 data_sf <- st_as_sf(data, coords = c("X", "Y"), crs = 6371)
@@ -305,7 +309,7 @@ m_cases <- leaflet(data_sf_wgs84) %>%
 m_cases
 ```
 
-### 7. Exploratory Analysis 4: Analyzing Year-over-Year (YoY) Change - can rename
+### 7. Exploratory Analysis 5: Analyzing Year-over-Year (YoY) Change - can rename
 
 ```{r YOY analysis}
 # 1. Calculate Year-over-Year (YoY) percentage change
