@@ -1,5 +1,5 @@
 ---
-title: "dengueAnalysis"
+title: "DengueAnalysis"
 author: "Aman Shaik, Nick Huberty, Tom Suo, Connor Lee"
 date: "2025-10-07"
 output: html_document
@@ -64,10 +64,10 @@ data_formatted <- data %>%
 data_summary <- data_formatted %>%
   group_by(Year) %>%
   summarise(
-    total_dengue = sum(Count, na.rm = TRUE))%>%
+    total_Dengue = sum(Count, na.rm = TRUE))%>%
   arrange(Year) %>%
   mutate(
-    percent_change = (total_dengue - lag(total_dengue))/lag(total_dengue) * 100
+    percent_change = (total_Dengue - lag(total_Dengue))/lag(total_Dengue) * 100
   )
 
 ggplot(data_summary, aes(x = Year)) +
@@ -76,7 +76,7 @@ ggplot(data_summary, aes(x = Year)) +
     name = "Total Dengue Cases",
     sec.axis = sec_axis(~./100, name = "% Change from Previous Year")
   ) +
-  geom_col(aes(y=total_dengue), fill = "blue")+
+  geom_col(aes(y=total_Dengue), fill = "blue")+
   theme_minimal(base_size = 12) +
   labs(
     title = "Total Dengue Cases and Year-over-Year % Change in Merida",
@@ -88,7 +88,7 @@ ggplot(data_summary, aes(x = Year)) +
 
 ```{r mapping_plot}
 #maybe overlay the map of the location
-# This plot shows the geospatial location of dengue incidence in Merida, Mexico. We can potentially aesthetically improve this plot later using QGIS or ArcGIS.
+# This plot shows the geospatial location of Dengue incidence in Merida, Mexico. We can potentially aesthetically improve this plot later using QGIS or ArcGIS.
 plot(data$X, data$Y, 
      main = "Spatial Locations of Sampling Points",
      xlab = "X Coordinate", 
@@ -118,22 +118,23 @@ ggplot() +
 
 ```
 
-```{r mapping_ggplot}
-# This plot shows the density of dengue, indicating more vulnerable areas in the city. 
-
-ggplot(data, aes(x = X, y = Y, color = Den2012)) +
-  geom_point(size = 3) +
-  scale_color_viridis_c(option = "plasma") +
-  labs(title = "Dengue Fever Density (2012)",
-       x = "X Coordinate", y = "Y Coordinate",
-       color = "Density") +
-  theme_minimal()
-
-```
-
-This interactive plot visualizes the density and geographic spread of Dengue Fever cases in Merida, Mexico, from 2012 to 2015. The animation reveals a dynamic pattern: the outbreaks in 2012 and 2013 were diversely concentrated across the city. From 2014 onwards, there were far fewer hotspots. However, while the 2015 outbreak appears less widespread, the data indicates a significant spike in total cases from the previous year, suggesting that the remaining hotspots became much more intense. \### 6. Exploratory Analysis 3: Animated Spatial-Temporal Trends - can rename
+### 6. Exploratory Analysis 3: Animated Spatial-Temporal Trends - can rename
 
 ```{r mapping_ggplot}
+
+data_long <- data_cleaned %>%
+  pivot_longer(
+    cols = starts_with("Den"),
+    names_to = "Year",
+    names_prefix = "Den",
+    values_to = "Cases" 
+  ) %>%
+  mutate(Year = as.integer(Year))
+
+global_max_cases <- max(data_long$Cases)
+
+
+
 fig <- plot_ly(
   data_long,
   x = ~X,
@@ -143,11 +144,9 @@ fig <- plot_ly(
   mode = 'markers',
   color = ~Cases,
   colors = "Reds",
-  cmin = 0,                    # ✅ global lower bound
-  cmax = global_max_cases,     # ✅ global upper bound
   marker = list(
     size = 10,
-    line = list(width = 0)
+    line = list(width = 0.5,color = 'black')
   ),
   text = ~paste(
     "Year:", Year,
@@ -162,8 +161,8 @@ fig <- plot_ly(
     title = 'Dengue Fever Density in Merida (2012–2015)',
     xaxis = list(title = 'X Coordinate'),
     yaxis = list(title = 'Y Coordinate'),
-    plot_bgcolor = "lightgrey",
-    paper_bgcolor = "lightgrey"
+    plot_bgcolor = "white",
+    paper_bgcolor = "white"
   ) %>%
   animation_opts(
     frame = 1500,
@@ -178,15 +177,13 @@ fig <- plot_ly(
   )
 
 fig
-
-
 ```
 
-While static maps are effective for visualizing spatial distribution at a single point in time, they are insufficient for understanding the outbreak's temporal dynamics. To observe the evolution of dengue hotspots from 2012 to 2015, an animated visualization is required. This section details the creation and interpretation of an interactive plot designed to reveal these year-over-year changes in disease density across Merida. The plotly library, which we use to build this animation, requires data in a "long" format. Therefore, our first step in this section is to transform the data using pivot_longer(), converting our "wide" table into a "long" one suitable for time-series animation.
+While static maps are effective for visualizing spatial distribution at a single point in time, they are not as effective for understanding the outbreak's affect over a period of time. To observe the evolution of Dengue virus from 2012 to 2015 we can analyze it with an animated chart. This section details the creation and interpretation of an interactive plot designed to reveal these year-over-year changes in disease density across Merida. The plotly library, which we use to build this animation, requires data in a "long" format. Therefore, we need to first transform the data using pivot_longer(), converting our "wide" table into a "long" one suitable for time-series animation.
 
-The resulting interactive plot sequences the data by year, allowing for a direct comparison of spatial patterns. The animation begins in 2012, revealing a significant outbreak. We can clearly identify two primary hotspots with case counts exceeding 100. Critically, these hotspots are not isolated; they are surrounded by numerous adjacent locations reporting nearly 50 cases, indicating a concentrated and widespread initial event. Moving to 2013, the visualization shows a dramatic city-wide reduction in dengue incidence. There are far fewer cases overall, with no single region reporting over 100 cases and only a handful approaching 50. The landscape is dominated by low-incidence areas, suggesting the outbreak has subsided. This trend continues into 2014, which shows an even more pronounced decline. The vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
+The interactive plot displays the number of cases in their regions by year, allowing for a direct comparison of spatial patterns. The animation starts in 2012 and reveaks a significant outbreak. We can clearly identify two primary hotspots with case counts exceeding 100. It is important to note that these hotspots are not isolated. They are surrounded by Dengue infested locations reporting nearly 50 cases, indicating a concentrated and widespread initial event. If we analyze the following year we can see a surprising city-wide reduction in Dengue incidence. There are far fewer cases overall, with no single region in Merida reporting over 100 cases and only a handful approaching 50 cases. Overall, the area is dominated by low-incidence areas, suggesting the outbreak has died down. This trend continues into 2014, which shows an even more pronounced decline. The vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
 
-The final frame, 2015, illustrates a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Furthermore, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each. This visualization powerfully supports the principle of spatial autocorrelation in epidemiology; the 2015 outbreak demonstrates that new high-incidence areas are highly likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread.
+When analyzing 2015 we can see a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Additionally, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each. To sum up, this visualization demonstrates that disease spread in this urban environment is not random, but rather persistent and spatially clustered in specific, identifiable high-risk zones. The 2015 outbreak also demonstrates that new high-incidence areas are likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread.
 
 ### 7. Exploratory Analysis 4: Analyzing Year-over-Year (YoY) Change - can rename
 
