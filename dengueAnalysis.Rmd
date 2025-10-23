@@ -1,5 +1,5 @@
 ---
-title: "DengueAnalysis"
+title: "dengueAnalysis"
 author: "Aman Shaik, Nick Huberty, Tom Suo, Connor Lee"
 date: "2025-10-07"
 output: html_document
@@ -11,17 +11,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1. Introduction
 
-In this exploratory data analysis, our group examines Dengue Fever cases in the city of Mérida, Mexico, using data extracted from _______. Dengue Fever is a mosquito-borne viral infection caused by the dengue virus, which continues to pose a significant public health concern in tropical and subtropical regions.
+In this exploratory data analysis, our group examines dengue fever cases in the city of Mérida, Mexico, using data extracted from _______. Dengue fever is a mosquito-borne viral infection caused by the dengue virus, which continues to pose a significant public health concern in tropical and subtropical regions.
 
-Some of Dengue Fever’s most common symptoms include sudden drops in blood pressure, nausea, and muscle pain, similar to COVID-19 symptoms. Researchers have found that Merida, which is the capital of the state of Yucatán, experiences recurrent dengue outbreaks due to having a tropical climate, seasonal rainfall and standing water, and an urban population density. 
+Some of dengue fever’s most common symptoms include sudden drops in blood pressure, nausea, and muscle pain, similar to COVID-19 symptoms. Researchers have found that Merida, which is the capital of the state of Yucatán, experiences recurrent dengue outbreaks due to having a tropical climate, seasonal rainfall and standing water, and an urban population density. 
 
-Our group was initially interested in exploring public health-related datasets, due to our shared experiences of living throughout the COVID-19 pandemic. We noticed how COVID-19 had similar symptoms to Dengue Fever and had similar effects in profoundly impacting communities worldwide, highlighting how infectious diseases can spread rapidly and sporadically across different regions. By being able to analyze a virus like Dengue Fever, our group can examine how a viral disease can be influenced by environmental and geographic factors.
+Our group was initially interested in exploring public health-related datasets, due to our shared experiences of living throughout the COVID-19 pandemic. We noticed how COVID-19 had similar symptoms to dengue fever and had similar effects in profoundly impacting communities worldwide, highlighting how infectious diseases can spread rapidly and sporadically across different regions. By being able to analyze a virus like dengue fever, our group can examine how a viral disease can be influenced by environmental and geographic factors.
 
 To elaborate more on the dataset, it is comprised of 540 rows, which are all distinctly different regions within Merida. Each region is quantified based on their coordinates from the Universal Transverse Mercator (UTM) system, a grid-based coordinate system used to map locations using meters. The dataset initially had 8 columns: the X and Y UTM coordinates of each region, SP_ID (an identifier for each region), CVEGEO (geographic identifier code used by the Mexican Geographic Agency), and the number of cases in each region across four different years (2012-2015). Later mentioned in the Data Cleaning step, SP_ID and CVEGEO are not necessary for our overall analysis. 
 
 ### 2. Project Setup, Data Loading, and Data Cleaning
 
-Before developing any visualizations or analytical models, we prepared the R environment by loading our primary dataset, “Merida_Den12_13_14_15.csv,” along with a complete suite of R packages. We used the tidyverse package, which provides core tools like dplyr for data transformation and ggplot2 for static visualization. For our more advanced interactive plots, we loaded plotly (used for the animated density map) and leaflet (used for the interactive Year-over-Year map). We also included sf to read and handle the simple features (geospatial) data for Merida. Once all libraries were loaded, we imported the dataset into a data frame. The resulting data frame contained 540 rows and 8 columns, representing spatial identifiers, coordinate values, and annual Dengue case counts. This formed the foundation for our exploratory analysis.
+Before developing any visualizations or analytical models, we prepared the R environment by loading our primary dataset, “Merida_Den12_13_14_15.csv,” along with a complete suite of R packages. We used the tidyverse package, which provides core tools like dplyr for data transformation and ggplot2 for static visualization. For our more advanced interactive plots, we loaded plotly (used for the animated density map) and leaflet (used for the interactive Year-over-Year map). We also included sf to read and handle the simple features (geospatial) data for Merida. Once all libraries were loaded, we imported the dataset into a data frame. The resulting data frame contained 540 rows and 8 columns, representing spatial identifiers, coordinate values, and annual dengue case counts. This formed the foundation for our exploratory analysis.
 
 Data Cleaning is a crucial step to ensure the integrity and relevance of the data prior to our analysis. We want to ensure that all the data required for this project is clean, validated, and standardized so that our group can create data visualizations using the shared data.
 
@@ -52,11 +52,11 @@ print(na_counts)
 head(data_cleaned)
 ```
 
-### 3. Exploratory Analysis 1: Aggregate City-Wide Trends - can rename
+### 3. Exploratory Analysis 1: Aggregate City-Wide Trends
 
 ```{r}
 
-### Reorganize the dataset so each year's Dengue Fever count is stored as a separate row
+### Reorganize the dataset so each year's dengue fever count is stored as a separate row
 data_formatted <- data %>%
   pivot_longer(
     cols = starts_with("Den"),
@@ -65,74 +65,56 @@ data_formatted <- data %>%
   ) %>%
   mutate(Year = as.numeric(gsub("Den", "", Year)))
 
-### Summarize the total Dengue Fever cases per year and calculate Year-over-Year percent change
+### Summarize the total dengue fever cases per year and calculate Year-over-Year percent change
 data_summary <- data_formatted %>%
   group_by(Year) %>%
   summarise(
-    total_Dengue = sum(Count, na.rm = TRUE))%>%
+    total_dengue = sum(Count, na.rm = TRUE))%>%
   arrange(Year) %>%
   mutate(
-    percent_change = (total_Dengue - lag(total_Dengue))/lag(total_Dengue) * 100
+    percent_change = (total_dengue - lag(total_dengue))/lag(total_dengue) * 100
   )
 
-### Visualize total Dengue Fever cases per year and Year-over-Year percent change
+### Visualize total dengue fever cases per year and Year-over-Year percent change
 ggplot(data_summary, aes(x = Year)) +
   geom_line(aes(y = percent_change * 100), color = "red", size = 1.2) +
   scale_y_continuous(
-    name = "Total Dengue Cases",
+    name = "Total dengue Cases",
     sec.axis = sec_axis(~./100, name = "% Change from Previous Year")
   ) +
-  geom_col(aes(y=total_Dengue), fill = "blue")+
+  geom_col(aes(y=total_dengue), fill = "blue")+
   theme_minimal(base_size = 12) +
   labs(
-    title = "Total Dengue Cases and Year-over-Year % Change in Merida",
+    title = "Total dengue Cases and Year-over-Year % Change in Merida",
     x = "Year"
   )
 ```
 
-When it comes to diseases, outbreaks, and other public health concerns, it is crucial to monitor the volume of cases to understand if the outbreak is being contained. Starting off as simply as possible, we created a first graph that summarizes the broader statistics of our Dengue Fever dataset in Merida – more specifically, we created a visualization that summarizes the amount of Dengue Fever cases from 2012 to 2015. This was conducted by grouping the cases by what year they were from, and then counting how many cases were in each year. The graph shows 2012 having the highest volume of Dengue Fever cases of almost 10,000, which has a significant dropoff in 2013. Following this trend, 2014 also sees a decline in total Dengue Fever cases, until another sharp increase of cases comes in 2015 of around 7,500 cases. 
+When it comes to diseases, outbreaks, and other public health concerns, it is crucial to monitor the volume of cases to understand if the outbreak is being contained. Starting off as simply as possible, we created a first graph that summarizes the broader statistics of our dengue fever dataset in Merida – more specifically, we created a visualization that summarizes the amount of dengue fever cases from 2012 to 2015. This was conducted by grouping the cases by what year they were from, and then counting how many cases were in each year. The graph shows 2012 having the highest volume of dengue fever cases of almost 10,000, which has a significant dropoff in 2013. Following this trend, 2014 also sees a decline in total dengue fever cases, until another sharp increase of cases comes in 2015 of around 7,500 cases. 
 
-Despite being able to visually see the fluctuations in volume of Dengue Fever cases, our group decided to create a percent change, year-over-year, visualization over the same chart. This method of calculating percent change is useful in tracking the rate of increase or decrease of the Dengue Fever, which allows us to not only understand the spread of the disease, but how quickly it is spreading. By using geom_line in our visualization, the red line helps our audience understand the relative changes in Dengue Fever cases over the years. When the percent change is sharply negative, like in 2013 and 2014, that could indicate successful containment plans, while sharp positive changes in the red line could signal a public health crisis.
+Despite being able to visually see the fluctuations in volume of dengue fever cases, our group decided to create a percent change, year-over-year, visualization over the same chart. This method of calculating percent change is useful in tracking the rate of increase or decrease of the dengue fever, which allows us to not only understand the spread of the disease, but how quickly it is spreading. By using geom_line in our visualization, the red line helps our audience understand the relative changes in dengue fever cases over the years. When the percent change is sharply negative, like in 2013 and 2014, that could indicate successful containment plans, while sharp positive changes in the red line could signal a public health crisis.
 
-The pertinence of this visualization is that it helps with public health tracking and surveillance. Despite being a more general statistical visualization, this graph can help track the trends of how quickly Dengue Fever is spreading in Merida, while also assessing the effectiveness of interventions in certain years, assuming that certain confounding variables are controlled for – other variables such as seasonal changes and weather variation could certainly impact our future findings. Ultimately, data tracking leads to action, and in the case of Dengue Fever, it can lead to mosquito control initiatives or vaccination campaigns. 
+The pertinence of this visualization is that it helps with public health tracking and surveillance. Despite being a more general statistical visualization, this graph can help track the trends of how quickly dengue fever is spreading in Merida, while also assessing the effectiveness of interventions in certain years, assuming that certain confounding variables are controlled for – other variables such as seasonal changes and weather variation could certainly impact our future findings. Ultimately, data tracking leads to action, and in the case of dengue fever, it can lead to mosquito control initiatives or vaccination campaigns. 
 
-This initial analysis provides a strong foundation for conducting a geospatial analysis on where these Dengue Fever cases are specifically occurring.
+This initial analysis provides a strong foundation for conducting a geospatial analysis on where these dengue fever cases are specifically occurring.
 
-### 4. Exploratory Analysis 2: Static Geospatial Patterns - can rename
-
+### 4. Exploratory Analysis 2: Ovitrap Data
+Before we further analyze dengue incidence over time, let's briefly look at some data for mosquito ovitraps. We can keep in mind the location of the highest egg density as we look at disease hot spots later on.
 ```{r mapping_plot}
-#maybe overlay the map of the location
-# This plot shows the geospatial location of Dengue incidence in Merida, Mexico. We can potentially aesthetically improve this plot later using QGIS or ArcGIS.
-plot(data$X, data$Y, 
-     main = "Spatial Locations of Sampling Points",
-     xlab = "X Coordinate", 
-     ylab = "Y Coordinate", 
-     pch = 19, col = "blue")
-library(ggplot2)
-# 1️ Read file
-library(sf)
 
-town_map <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
-st_crs(town_map)
-disease_data <- read.csv('Merida_Den12_13_14_15.csv')
+dengue <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+Ovitraps <- st_read("Merida_S25/Ovitraps_Sum/Ovitraps_Sum.shp")
 
-# make sure CRS is same, convert to sf
-disease_sf <- st_as_sf(disease_data, coords = c("X", "Y"), crs = st_crs(town_map))
-names(disease_data)
 
-# 4 generate plot
 ggplot() +
-  geom_sf(data = town_map, fill = "gray95", color = "black", linewidth = 0.3) +
-  geom_sf(data = disease_sf, aes(color = Den2012, size = Den2012)) +
-  scale_color_viridis_c(option = "plasma") +
-  theme_minimal() +
-  labs(title = "Spatial Locations",
-       color = "Incidence",
-       size = "Incidence")
+  geom_sf(data = dengue, color = "black", linewidth = 0.3) +
+  geom_sf(data = Ovitraps, aes(color = Total), size = 2, alpha = 0.9) +
+  scale_color_gradient(low = "yellow", high = "red", name = "Eggs per Trap") +
+  labs(title = "Ovitrap Egg Counts in Merida",)
 
 ```
 
-### 5. Exploratory Analysis 3: Animated Spatial-Temporal Trends - can rename
+### 5. Exploratory Analysis 3: Animated Spatial-Temporal Trends
 
 ```{r mapping_ggplot}
 
@@ -147,7 +129,7 @@ data_long <- data_cleaned %>%
   # Convert year column to integer type
   mutate(Year = as.integer(Year))
 
-# Create animated scatter plot of Dengue cases
+# Create animated scatter plot of dengue cases
 fig <- plot_ly(
   data_long,       # use long-format dataframe
   x = ~X,          # X coordinate
@@ -174,7 +156,7 @@ fig <- plot_ly(
   colorbar(title = "Case Count") %>%
   # Update layout, axis titles, and background colors
   layout(
-    title = 'Dengue Fever Density in Merida (2012–2015)',
+    title = 'dengue fever Density in Merida (2012–2015)',
     xaxis = list(title = 'X Coordinate'),
     yaxis = list(title = 'Y Coordinate'),
     plot_bgcolor = "white",
@@ -199,11 +181,11 @@ fig
 
 ```
 
-We can further analyze the evolution Dengue virus in the Merida region over a period of time with an animated density chart. By using plotly, we can visualize high-density infected regions in red, compared to low-density infected regions in white, and due to the animation, can see the spread of the disease throughout the 2012-2015 timespan.
+We can further analyze the evolution dengue virus in the Merida region over a period of time with an animated density chart. By using plotly, we can visualize high-density infected regions in red, compared to low-density infected regions in white, and due to the animation, can see the spread of the disease throughout the 2012-2015 timespan.
 
-When analyzing the density chart in 2012, we can see a significant outbreak as there are two primary hotspot regions with case counts exceeding 100. It is important to note that these hotspots are not isolated. They are surrounded by Dengue-infested locations reporting nearly 50 cases, indicating a concentrated and widespread initial event.
+When analyzing the density chart in 2012, we can see a significant outbreak as there are two primary hotspot regions with case counts exceeding 100. It is important to note that these hotspots are not isolated. They are surrounded by dengue-infested locations reporting nearly 50 cases, indicating a concentrated and widespread initial event.
 
-If we advance to 2013, we can see a surprising city-wide reduction in Dengue incidence. There are far fewer cases overall, with no single region in Merida reporting over 100 cases and only a handful approaching 50 cases. Overall, the area is dominated by low-incidence areas, suggesting the outbreak has died down. This trend continues into 2014, which shows an even more pronounced decline as the vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
+If we advance to 2013, we can see a surprising city-wide reduction in dengue incidence. There are far fewer cases overall, with no single region in Merida reporting over 100 cases and only a handful approaching 50 cases. Overall, the area is dominated by low-incidence areas, suggesting the outbreak has died down. This trend continues into 2014, which shows an even more pronounced decline as the vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
 
 However, when analyzing 2015, we can see a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Additionally, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each.
 
