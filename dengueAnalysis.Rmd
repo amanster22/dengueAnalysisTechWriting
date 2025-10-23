@@ -1,7 +1,7 @@
 ---
-title: "dengueAnalysis"
+title: "Analyzing the Spatiotemporal Dynamics of Dengue Fever in Merida, Mexico (2012–2015)"
 author: "Aman Shaik, Nick Huberty, Tom Suo, Connor Lee"
-date: "2025-10-07"
+date: "2025-10-23"
 output: html_document
 ---
 
@@ -132,8 +132,8 @@ data_long <- data_cleaned %>%
 # Create animated scatter plot of dengue cases
 fig <- plot_ly(
   data_long,       # use long-format dataframe
-  x = ~X,          # X coordinate
-  y = ~Y,          # Y coordinate
+  x = ~X,         
+  y = ~Y,          
   frame = ~Year,   # animate by year
   type = 'scatter', 
   mode = 'markers', 
@@ -150,15 +150,15 @@ fig <- plot_ly(
     "<br>X:", round(X, 2),
     "<br>Y:", round(Y, 2)
   ),
-  hoverinfo = 'text'  # display hover text only
+  hoverinfo = 'text'
 ) %>%
   # Add color bar to indicate case counts
-  colorbar(title = "Case Count") %>%
+  colorbar(title = "Annual Case Count") %>%
   # Update layout, axis titles, and background colors
   layout(
-    title = 'dengue fever Density in Merida (2012–2015)',
-    xaxis = list(title = 'X Coordinate'),
-    yaxis = list(title = 'Y Coordinate'),
+    title = 'Dengue Fever Density in Merida (2012–2015)',
+    xaxis = list(title = 'X Coordinate (UTM in Meters)'),
+    yaxis = list(title = 'Y Coordinate (UTM in Meters)'),
     plot_bgcolor = "white",
     paper_bgcolor = "white"
   ) %>%
@@ -166,30 +166,29 @@ fig <- plot_ly(
   animation_opts(
     frame = 3000,      # 3 seconds per frame
     transition = 800,  # 0.8 second transition
-    easing = "linear"  # linear transition
+    easing = "linear" 
   ) %>%
   # Add animation slider for selecting year
   animation_slider(
     currentvalue = list(
-      prefix = "Year: ", # label prefix
+      prefix = "Year: ",
       font = list(color = "red")
     )
   )
 
-# Display the interactive animated plot
 fig
 
 ```
 
-We can further analyze the evolution dengue virus in the Merida region over a period of time with an animated density chart. By using plotly, we can visualize high-density infected regions in red, compared to low-density infected regions in white, and due to the animation, can see the spread of the disease throughout the 2012-2015 timespan.
+We can further analyze the evolution dengue virus in the Merida region over a period of time with an animated density chart. By using Plotly, we can plot the position, measured in UTM coordinates (meters), of the annual case counts (2012-2015), allowing us to visualize high-density infected regions in red and low-density regions in white. The animation illustrates how the spatial distribution of the disease fluctuates across the same areas throughout the analyzed timespan.
 
-When analyzing the density chart in 2012, we can see a significant outbreak as there are two primary hotspot regions with case counts exceeding 100. It is important to note that these hotspots are not isolated. They are surrounded by dengue-infested locations reporting nearly 50 cases, indicating a concentrated and widespread initial event.
+When analyzing the density chart in 2012, we can see a significant outbreak as there are two primary hotspot regions with annual case counts exceeding 100. It is important to note that these hotspots are not isolated. They are surrounded by dengue-infested locations reporting nearly 50 annual cases, indicating a concentrated and widespread initial event.
 
-If we advance to 2013, we can see a surprising city-wide reduction in dengue incidence. There are far fewer cases overall, with no single region in Merida reporting over 100 cases and only a handful approaching 50 cases. Overall, the area is dominated by low-incidence areas, suggesting the outbreak has died down. This trend continues into 2014, which shows an even more pronounced decline as the vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
+If we advance to 2013, we can see a surprising city-wide reduction in dengue incidence. There are far fewer cases overall, with no single region in Merida reporting over 100 annual cases and only a handful approaching 50 cases. Overall, the area is dominated by low-incidence areas, suggesting the outbreak has died down. This trend continues into 2014, which shows an even more pronounced decline as the vast majority of regions report zero cases, and the most significant hotspot contains only around 30 cases.
 
-However, when analyzing 2015, we can see a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with case counts approaching 150. Additionally, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 cases each.
+However, in 2015, we can see a powerful resurgence. While many areas remain low-incidence, two new, intense hotspots emerge with annual case counts approaching 150. Additionally, the space between these two hotspots contains a dense, concentrated cluster of locations reporting nearly 100 annual cases each.
 
-To sum up, this visualization demonstrates that disease spread in this urban environment is not random, but rather persistent and spatially clustered in specific, identifiable high-risk zones. The 2015 outbreak also demonstrates that new high-incidence areas are likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread. 
+To sum up, this visualization demonstrates that disease spread in this urban environment is not random, but rather persistent and spatially clustered in specific, identifiable high-risk zones. The 2015 outbreak also demonstrates that new high-incidence areas are likely to appear adjacent to or within previous outbreak zones, confirming the geospatial nature of disease spread, which may be influenced by environmental or population-related factors.
 
 ### 6. Exploratory Analysis 4: Interactive Case Count Map
 
@@ -469,17 +468,10 @@ The 2015 vs 2014 layer though is showing a different story that starkly contrast
 
 ### 8. Conclusion and Future Questions
 
-Our exploratory analysis highlights the spatial and temporal patterns of Dengue Fever in Mérida from 2012 to 2015, revealing that the disease is not randomly distributed, with certain neighborhoods consistently experiencing higher case counts. The year-over-year trends and animated maps show both declines and resurgences, suggesting that Dengue outbreaks are influenced by underlying environmental and/or societal factors.
+In our exploratory analysis, we successfully identified the spatial and temporal dynamics of Dengue fever in Mérida from 2012 to 2015. Our data revealed that a significant 2012 outbreak was followed by a two-year period of decline (2013-2014), allowing us to hypothesize that there was a successful containment. However, our findings in the Annual Case Trend Plot (Section 3) and the Animated Spatial Distribution Map (Section 5) indicate there was a powerful and abrupt resurgence in 2015.
 
-For future work, the analysis could be extended to incorporate additional data to gain deeper insights into disease dynamics and etiology. We briefly outline some examples below.
+Our geospatial analyses demonstrated that this 2015 outbreak was not a random event. The animated map revealed that the new hotspots were persistent and spatially clustered, emerging within or immediately adjacent to the original 2012 outbreak zones. The Year-over-Year (YoY) analysis (Section 7) supports this, showing a volatile spread into previously low-risk areas, highlighting the virus's ability to resurge. These visualizations strongly support our primary conclusion that Dengue fever spreading in this urban environment is not random but a persistent, spatially driven phenomenon. The analysis of ovitrap data (Section 4) provides a preliminary, data-driven hypothesis for why these high-risk zones correlate with high vector (mosquito) density, suggesting they act as reservoirs for the virus even during "quiet" years.
 
-Demographics: Examine age, gender, socioeconomic status, proximity to healthcare, education, of affected populations.
+This exploratory analysis can be further adapted for several specific, data-driven research focuses that move from what happened to why it happened. In future work, predictive modeling can be used to analyze how the 2012 hotspots (Section 5) correlate with the specific locations of the 2015 resurgence. Additionally, with increased access to ovitrap data, we can further analyze the ovitrap egg counts (Section 4) and the Dengue Fever case counts (Section 6) at the same neighborhood level. Having larger datasets with more available factors can also help identify if other variables contributed to the timing of the 2015 resurgence. Access to data on population, monthly precipitation, temperature, and drought regions can help identify specific triggers that activate these persistent, high-risk zones.
 
-Ovitrap data: Explore correlations between mosquito populations and case counts using statistical tests.
-
-Environmental variables: Investigate the impact of vegetation density, proximity to still water, etc.
-
-Population density: Assess how urban density influences the spread of dengue.
-
-By integrating these factors, future studies could better develop predictive models to better anticipate outbreaks and inform public health interventions, such as targeted mosquito control or community education campaigns.
-
+Overall, this study highlights the value of integrating temporal and spatial analyses to uncover patterns of disease persistence and resurgence in urban environments, while providing a foundation for data-driven public health and safety strategies.
