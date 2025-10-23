@@ -308,6 +308,12 @@ m_cases <- leaflet(data_sf_wgs84) %>%
 m_cases
 ```
 
+While the animated density plot in the previous section provided an excellent overview of the temporal flow, this interactive leaflet map offers another perspective that adds more context for our analysis. By overlaying the case data on real world maps of both the light map as well as the satelite imagery map and adding the 'Neighborhoods' shapefile, we can move from abstract coordinates to tangible locations. The layer controls which function as a set of radio buttons to select the basemap to have the data overlayed upon allow for a contextually rich understanding of absolute case counts for each year.
+
+Using this map confirms and deepens our previous findings. The 2012 Cases layer shows the initial outbreak's hot spots clearly, colored in dark red. Looking at the "Neighborhoods" overlay reveals these are concentrated in specific districts. When switching to the 2013 Cases and 2014 Cases layers, we can observe the city wide decline. The dark red dots (high case counts) almost vanish from the map, reinforcing the narrative of a successful containment period that was first identified in the aggregate bar chart.
+
+The 2015 Cases layer highlights the dramatic resurgence. We can now pinpoint the exact neighborhoods that experienced this new outbreak, which appear to be both a re emergence in some of the 2012 hot spots and an expansion into new adjacent areas. This map is invaluable for understanding the where of the outbreak. However, it only shows absolute counts. To understand the speed and volatility of the spread, we next need to analyze the relative change from one year to the next.
+
 ### 7. Exploratory Analysis 5: Analyzing Year-over-Year (YoY) Change
 
 ```{r YOY analysis}
@@ -454,6 +460,12 @@ m <- leaflet(data_sf_wgs84) %>%
 # Display the map
 m
 ```
+
+It is not enough to only look at the absolute numbers for the outbreak of dengue fever. We must also look at the changes through time to identify whether there are any temporal trends. Health officals would want to measure key insights such as 50% decrease in a major hotspot or a 500% increase in a new previously safe area. This map visualizes the Year over Year YoY percentage change to provide these temporal insights. We represent these changes by using the color pallets of data points on the map with red points to signify a percentage increase in worsening outbreak while using blue points to show a percentage decrease which represents improving situation compared to the previous year. Finally, grey points indicate areas with no change or no cases in either period of the outbreak.
+
+The first layer 2013 vs 2012 visualizes the success of containment efforts after the 2012 outbreak. These trends agree with our findings in section 3 of our analysis where we see a massive decrease in the amount of outbreaks which is also represented here with large quantities of blue points. The 2014 vs 2013 layer shows a more mixed but still generally positive story. Many areas that were blue in the previous layer are now grey indicating they went from some cases to zero or stayed at zero. The overall trend remains one of decline or stabilization which is as expected as the amount decrease is limited compared to the first outbreak year.
+
+The 2015 vs 2014 layer though is showing a different story that starkly contrasts the previous trends. The map is now covered in bright red dots with many representing infinite or extremely high percentage increases as cases jumped from near 0 in 2014 to significant numbers in 2015. This visualization starkly contrasts with the absolute case map of Section 6. While that map showed where the 2015 hotspots were, this map shows the surprising amount of increase of dengue fever occurences representing another outbreak. This highlights the virus's ability to resurge unexpectedly turning previously low risk zones into new hotspots quickly.
 
 ### 8. Conclusion and Future Questions
 
