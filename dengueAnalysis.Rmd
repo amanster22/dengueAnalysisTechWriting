@@ -164,8 +164,8 @@ fig <- plot_ly(
   ) %>%
   # Set animation speed and transition style
   animation_opts(
-    frame = 3000,      # 3 seconds per frame
-    transition = 800,  # 0.8 second transition
+    frame = 5000,      # 5 seconds per frame
+    transition = 1500,  # 0.8 second transition
     easing = "linear" 
   ) %>%
   # Add animation slider for selecting year
@@ -178,6 +178,9 @@ fig <- plot_ly(
 
 fig
 
+```
+```{r}
+htmlwidgets::saveWidget(fig, "dengue_animation.html", selfcontained = TRUE)
 ```
 
 We can further analyze the evolution dengue virus in the Merida region over a period of time with an animated density chart. By using Plotly, we can plot the position, measured in UTM coordinates (meters), of the annual case counts (2012-2015), allowing us to visualize high-density infected regions in red and low-density regions in white. The animation illustrates how the spatial distribution of the disease fluctuates across the same areas throughout the analyzed timespan.
