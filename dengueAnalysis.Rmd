@@ -309,6 +309,9 @@ m_cases <- leaflet(data_sf_wgs84) %>%
 # Display the map
 m_cases
 ```
+```{r}
+htmlwidgets::saveWidget(m_cases, "dengue_InteractiveCaseCount.html", selfcontained = TRUE)
+```
 
 While the animated density plot in the previous section provided an excellent overview of the temporal flow, this interactive leaflet map offers another perspective that adds more context for our analysis. By overlaying the case data on real world maps of both the light map as well as the satelite imagery map and adding the 'Neighborhoods' shapefile, we can move from abstract coordinates to tangible locations. The layer controls which function as a set of radio buttons to select the basemap to have the data overlayed upon allow for a contextually rich understanding of absolute case counts for each year.
 
@@ -461,6 +464,9 @@ m <- leaflet(data_sf_wgs84) %>%
 
 # Display the map
 m
+```
+```{r}
+htmlwidgets::saveWidget(m, "dengue_YoY_map.html", selfcontained = TRUE)
 ```
 
 It is not enough to only look at the absolute numbers for the outbreak of dengue fever. We must also look at the changes through time to identify whether there are any temporal trends. Health officals would want to measure key insights such as 50% decrease in a major hotspot or a 500% increase in a new previously safe area. This map visualizes the Year over Year YoY percentage change to provide these temporal insights. We represent these changes by using the color pallets of data points on the map with red points to signify a percentage increase in worsening outbreak while using blue points to show a percentage decrease which represents improving situation compared to the previous year. Finally, grey points indicate areas with no change or no cases in either period of the outbreak.
