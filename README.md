@@ -1,7 +1,6 @@
-# malariaAnalysisTechWriting
-Analyzing Dengue Fever in Merida, Mexico (2012–2015)
+# Analyzing Dengue Fever in Merida, Mexico (2012–2015)
 
-Overview
+##Overview
 
 This project analyzes the spatiotemporal patterns of dengue fever in Merida, Mexico using case data from 2012–2015. By leveraging precise spatial coordinates, we aim to identify persistent disease "hotspots" and understand their evolution and relationship with population density.
 
