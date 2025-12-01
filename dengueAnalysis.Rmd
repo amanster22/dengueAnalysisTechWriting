@@ -40,17 +40,47 @@ library(htmltools)
 library(scales)
 
 data <- read.csv('Merida_Den12_13_14_15.csv')
+pop_data <- read.csv('merida_census_final.csv')
 
 head(data)
+head(pop_data)
+```
+```{r}
+# 1. Ensure the ID columns are characters to prevent scientific notation issues during joining
+data <- data %>% mutate(CVEGEO = as.character(CVEGEO))
+pop_data <- pop_data %>% mutate(AGEB_ID = as.character(AGEB_ID))
+
+# 2. Join the datasets
+# We keep all dengue records (left_join) and match CVEGEO to AGEB_ID
+data_merged <- data %>%
+  left_join(pop_data, by = c("CVEGEO" = "AGEB_ID"))
+
+# 3. Calculate Incidence Rates (Cases per 10,000 people)
+# We handle division by zero (if population is missing or 0)
+data_cleaned <- data_merged %>%
+  mutate(
+    # Create Rate columns
+    Rate2012 = (Den2012 / Population) * 10000,
+    Rate2013 = (Den2013 / Population) * 10000,
+    Rate2014 = (Den2014 / Population) * 10000,
+    Rate2015 = (Den2015 / Population) * 10000
+  ) %>%
+  # Replace any Infs or NaNs (from 0 population) with NA
+  mutate(across(starts_with("Rate"), ~ifelse(is.finite(.), ., NA))) %>%
+  # Select only the columns we need for analysis
+  select(X, Y, SP_ID, CVEGEO, Population, starts_with("Den"), starts_with("Rate"))
+
+data_cleaned <- data_cleaned %>%
+  filter(!SP_ID %in% c(392, 451))
+
+# Check for nulls in the new rate columns
+na_counts <- colSums(is.na(data_cleaned))
+print("Missing values check:")
+print(na_counts)
+
+tail(data_cleaned)
 ```
 
-```{r}
-data_cleaned <- data %>%
-  select(X, Y, starts_with("Den"))
-na_counts <- colSums(is.na(data_cleaned))
-print(na_counts)
-head(data_cleaned)
-```
 
 ### 3. Exploratory Analysis 1: Aggregate City-Wide Trends
 
@@ -121,12 +151,12 @@ ggplot() +
 # Reshape dataframe from wide to long format, each year becomes a separate row with 'Cases' column
 data_long <- data_cleaned %>%
   pivot_longer(
-    cols = starts_with("Den"),  # select all year columns
-    names_to = "Year",          # new column for year
-    names_prefix = "Den",       # remove 'Den' prefix
-    values_to = "Cases"         # new column for case counts
+    # CHANGE HERE: explicitly select the 4 year columns OR use a regex pattern
+    cols = c(Den2012, Den2013, Den2014, Den2015), 
+    names_to = "Year",
+    names_prefix = "Den",
+    values_to = "Cases"
   ) %>%
-  # Convert year column to integer type
   mutate(Year = as.integer(Year))
 
 # Create animated scatter plot of dengue cases
@@ -474,6 +504,162 @@ It is not enough to only look at the absolute numbers for the outbreak of dengue
 The first layer 2013 vs 2012 visualizes the success of containment efforts after the 2012 outbreak. These trends agree with our findings in section 3 of our analysis where we see a massive decrease in the amount of outbreaks which is also represented here with large quantities of blue points. The 2014 vs 2013 layer shows a more mixed but still generally positive story. Many areas that were blue in the previous layer are now grey indicating they went from some cases to zero or stayed at zero. The overall trend remains one of decline or stabilization which is as expected as the amount decrease is limited compared to the first outbreak year.
 
 The 2015 vs 2014 layer though is showing a different story that starkly contrasts the previous trends. The map is now covered in bright red dots with many representing infinite or extremely high percentage increases as cases jumped from near 0 in 2014 to significant numbers in 2015. This visualization starkly contrasts with the absolute case map of Section 6. While that map showed where the 2015 hotspots were, this map shows the surprising amount of increase of dengue fever occurences representing another outbreak. This highlights the virus's ability to resurge unexpectedly turning previously low risk zones into new hotspots quickly.
+
+```{r}
+# --- RE-LOAD SPATIAL DATA WITH POPULATION ---
+# We must re-create the spatial object using 'data_cleaned' because the 
+# previous section (YoY) overwrote 'data_sf_wgs84' with data that lacked population.
+
+# 1. Convert CLEANED data (which contains Population) to sf
+data_sf_pop <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
+data_sf_pop_wgs84 <- st_transform(data_sf_pop, crs = 4326)
+
+# 2. Load and transform the neighborhood shapefile (if not already loaded)
+town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
+
+# --- MAP 1: POPULATION MAP ---
+
+# Create Palette for Population
+pal_pop <- colorNumeric(
+  palette = "YlGnBu",
+  domain = data_sf_pop_wgs84$Population,
+  na.color = "#a0a0a0"
+)
+
+# Create Popup for Population
+popup_pop <- ~lapply(sprintf(
+  "<strong>ID: %s</strong><br/>Population: %s residents", 
+  SP_ID, comma(Population)
+), HTML)
+
+# Create the Map
+m_population <- leaflet(data_sf_pop_wgs84) %>%
+  # Base Groups (Satellite vs Light)
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
+  
+  # Neighborhood Overlay
+  addPolygons(
+    data = town_map_wgs84,
+    group = "Neighborhoods",
+    fillOpacity = 0.1,
+    color = "#ffffff", # White lines show up better on Satellite
+    weight = 1,
+    opacity = 0.5,
+    popup = ~SP_ID
+  ) %>%
+  
+  # Focus the map
+  fitBounds(
+    ~as.numeric(st_bbox(geometry)[1]), ~as.numeric(st_bbox(geometry)[2]),
+    ~as.numeric(st_bbox(geometry)[3]), ~as.numeric(st_bbox(geometry)[4])
+  ) %>%
+
+  # Data Layer: Population
+  addCircleMarkers(
+    group = "Population",
+    fillColor = ~pal_pop(Population), # Data color
+    fillOpacity = 0.8,
+    stroke = TRUE, 
+    weight = 1, 
+    color = "black", # Border color
+    radius = 6,
+    popup = popup_pop,
+    label = ~paste0("Pop: ", comma(Population))
+  ) %>%
+  
+  # Legend
+  addLegend(
+    pal = pal_pop,
+    values = ~Population,
+    title = "Population",
+    position = "bottomright",
+    opacity = 1
+  ) %>%
+  
+  # Layer Control
+  addLayersControl(
+    baseGroups = c("Satellite", "Light Map"),
+    overlayGroups = c("Population", "Neighborhoods"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+# Display Map
+m_population
+```
+
+```{r}
+# --- MAP 2: 2015 RATE MAP (Consistent Palette) ---
+
+# 1. PREPARE DATA: Create a specific spatial object for Rates
+# We rely on 'data_cleaned' because it contains the calculated 'Rate2015' column.
+data_sf_rates <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
+data_sf_rates_wgs84 <- st_transform(data_sf_rates, crs = 4326)
+
+# 2. Create Palette
+# We use "YlOrRd" (Yellow-Orange-Red) for the infection rate.
+pal_rate_15 <- colorNumeric(
+  palette = "YlOrRd",
+  domain = data_sf_rates_wgs84$Rate2015,
+  na.color = "#a0a0a0"
+)
+
+# 3. Create Popup
+popup_rate_15 <- ~lapply(sprintf(
+  "<strong>ID: %s</strong><br/>2015 Cases: %d<br/>Population: %s<br/><strong>Rate: %.2f per 10k</strong>", 
+  SP_ID, Den2015, comma(Population), Rate2015
+), HTML)
+
+# 4. Create Map
+# NOTE: We pass 'data_sf_rates_wgs84' to leaflet(), not the generic 'data_sf_wgs84'
+m_rate_2015 <- leaflet(data_sf_rates_wgs84) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
+  
+  addPolygons(
+    data = town_map_wgs84,
+    group = "Neighborhoods",
+    fillOpacity = 0.1,
+    color = "#ffffff",
+    weight = 1,
+    opacity = 0.5,
+    popup = ~SP_ID
+  ) %>%
+  
+  fitBounds(
+    ~as.numeric(st_bbox(geometry)[1]), ~as.numeric(st_bbox(geometry)[2]),
+    ~as.numeric(st_bbox(geometry)[3]), ~as.numeric(st_bbox(geometry)[4])
+  ) %>%
+
+  addCircleMarkers(
+    group = "2015 Rate",
+    fillColor = ~pal_rate_15(Rate2015),
+    fillOpacity = 0.9,
+    stroke = TRUE, 
+    weight = 1, 
+    color = "black", 
+    radius = 6,
+    popup = popup_rate_15,
+    label = ~paste0("Rate: ", round(Rate2015, 1))
+  ) %>%
+  
+  addLegend(
+    pal = pal_rate_15,
+    values = ~Rate2015,
+    title = "2015 Rate (per 10k)",
+    position = "bottomright",
+    opacity = 1
+  ) %>%
+  
+  addLayersControl(
+    baseGroups = c("Satellite", "Light Map"),
+    overlayGroups = c("2015 Rate", "Neighborhoods"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+m_rate_2015
+```
 
 ### 8. Conclusion and Future Questions
 
