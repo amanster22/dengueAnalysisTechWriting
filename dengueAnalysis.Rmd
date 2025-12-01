@@ -661,6 +661,124 @@ m_rate_2015 <- leaflet(data_sf_rates_wgs84) %>%
 m_rate_2015
 ```
 
+```{r}
+library(leaflet)
+library(sf)
+library(htmltools)
+library(scales) # for comma()
+
+# --- 1. DATA PREPARATION ---
+# Ensure we have the correct spatial object with both columns
+# (Assuming data_cleaned has 'Population', 'Rate2015', 'Den2015')
+data_sf_combined <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
+data_sf_combined_wgs84 <- st_transform(data_sf_combined, crs = 4326)
+
+# Load Town Map (Neighborhoods)
+town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
+
+# --- 2. DEFINE PALETTES ---
+# Palette for Population (Blue/Green)
+pal_pop <- colorNumeric(
+  palette = "YlGnBu",
+  domain = data_sf_combined_wgs84$Population,
+  na.color = "#a0a0a0"
+)
+
+# Palette for Rate (Yellow/Orange/Red) - Represents "Heat"
+pal_rate <- colorNumeric(
+  palette = "YlOrRd",
+  domain = data_sf_combined_wgs84$Rate2015,
+  na.color = "#a0a0a0"
+)
+
+# --- 3. DEFINE POPUPS ---
+# We create one popup that shows EVERYTHING so it works for both layers
+common_popup <- ~lapply(sprintf(
+  "<strong>ID: %s</strong><br/>
+   Population: %s<br/>
+   2015 Cases: %d<br/>
+   <strong>Rate: %.2f per 10k</strong>", 
+  SP_ID, comma(Population), Den2015, Rate2015
+), HTML)
+
+# --- 4. CREATE COMBINED MAP ---
+m_combined <- leaflet(data_sf_combined_wgs84) %>%
+  
+  # A. Base Layers (The Backgrounds)
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
+  
+  # B. Neighborhood Lines (Context)
+  addPolygons(
+    data = town_map_wgs84,
+    group = "Neighborhoods",
+    fill = FALSE,         # No fill, just lines
+    color = "#ffffff",    # White lines
+    weight = 1,
+    opacity = 0.6
+  ) %>%
+  
+  # C. Layer 1: Population
+  # We make these slightly smaller (radius 5)
+  addCircleMarkers(
+    group = "Population",
+    fillColor = ~pal_pop(Population),
+    fillOpacity = 0.7,
+    stroke = TRUE, 
+    weight = 1, 
+    color = "black",
+    radius = 5,
+    popup = common_popup,
+    label = ~paste0("Pop: ", comma(Population))
+  ) %>%
+  
+  # D. Layer 2: 2015 Rate
+  # We make these slightly larger (radius 8) or the same size depending on preference.
+  # If they are larger, they form a "halo" around the population dot when both are on.
+  addCircleMarkers(
+    group = "2015 Rate",
+    fillColor = ~pal_rate(Rate2015),
+    fillOpacity = 0.6,    # Slightly more transparent to see overlap
+    stroke = FALSE,       # No border for the rate to make it look more like a "glow"
+    radius = 8,           # Larger radius so it's visible behind/around population
+    popup = common_popup,
+    label = ~paste0("Rate: ", round(Rate2015, 1))
+  ) %>%
+  
+  # E. Legends (We add both!)
+  addLegend(
+    pal = pal_pop,
+    values = ~Population,
+    title = "Population",
+    position = "bottomright",
+    group = "Population"  # This binds the legend to the layer toggle!
+  ) %>%
+  
+  addLegend(
+    pal = pal_rate,
+    values = ~Rate2015,
+    title = "Rate (per 10k)",
+    position = "bottomleft", # Put on left to avoid crowding
+    group = "2015 Rate"      # This binds the legend to the layer toggle!
+  ) %>%
+  
+  # F. Layer Control ( The Toggles )
+  addLayersControl(
+    baseGroups = c("Satellite", "Light Map"),
+    overlayGroups = c("Population", "2015 Rate", "Neighborhoods"),
+    options = layersControlOptions(collapsed = FALSE) 
+  ) %>%
+  
+  # G. Hide one layer by default? (Optional)
+  # If you want them both visible at start, comment this out.
+  # If you want to start with just Rate, hide Population:
+  hideGroup("Population")
+
+# Display
+m_combined
+```
+
 ### 8. Conclusion and Future Questions
 
 In our exploratory analysis, we successfully identified the spatial and temporal dynamics of Dengue fever in Mérida from 2012 to 2015. Our data revealed that a significant 2012 outbreak was followed by a two-year period of decline (2013-2014), allowing us to hypothesize that there was a successful containment. However, our findings in the Annual Case Trend Plot (Section 3) and the Animated Spatial Distribution Map (Section 5) indicate there was a powerful and abrupt resurgence in 2015.
