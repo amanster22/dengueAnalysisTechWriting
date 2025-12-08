@@ -40,8 +40,8 @@ library(htmltools)
 library(scales)
 library(spdep)
 
-data <- read.csv('Merida_Den12_13_14_15.csv')
-pop_data <- read.csv('merida_census_final.csv')
+data <- read.csv('data/Merida_Den12_13_14_15.csv')
+pop_data <- read.csv('data/merida_census_final.csv')
 
 head(data)
 head(pop_data)
@@ -133,8 +133,8 @@ This initial analysis provides a strong foundation for conducting a geospatial a
 Before we further analyze dengue incidence over time, let's briefly look at some data for mosquito ovitraps. Ovitraps allow researchers to estimate the number of mosquitoes in an area by replicating breeding environments and measuring egg count. As dengue is a mosquito-borne illness, we should keep in mind the relative density of mosquito eggs as we look at disease hot spots later on. For the purposes of this analysis, we will not run statistical tests examining the exact assocation between estimated mosquito density and dengue incidence, as we intend to focus more on geospatial and temporal analytics.
 ```{r mapping_plot}
 
-map <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
-ovitraps <- st_read("Merida_S25/Ovitraps_Sum/Ovitraps_Sum.shp")
+map <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+ovitraps <- st_read("data/Merida_S25/Ovitraps_Sum/Ovitraps_Sum.shp")
 
 # Create the plot with a gradient from yellow to red, representing relatively low to relatively high egg density. Overlay the plot on a blank regional map of Merida.
 ggplot() +
@@ -210,9 +210,7 @@ fig <- plot_ly(
 fig
 
 ```
-```{r}
-htmlwidgets::saveWidget(fig, "dengue_animation.html", selfcontained = TRUE)
-```
+
 
 We can further analyze the evolution dengue virus in the Merida region over a period of time with an animated density chart. By using Plotly, we can plot the position, measured in UTM coordinates (meters), of the annual case counts (2012-2015), allowing us to visualize high-density infected regions in red and low-density regions in white. The animation illustrates how the spatial distribution of the disease fluctuates across the same areas throughout the analyzed timespan.
 
@@ -233,7 +231,7 @@ data_sf <- st_as_sf(data, coords = c("X", "Y"), crs = 6371)
 data_sf_wgs84 <- st_transform(data_sf, crs = 4326)
 
 # 2. Load and transform the neighborhood shapefile
-town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_raw <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
 
 # 3. Create a sequential color palette for absolute cases
@@ -340,9 +338,6 @@ m_cases <- leaflet(data_sf_wgs84) %>%
 # Display the map
 m_cases
 ```
-```{r}
-htmlwidgets::saveWidget(m_cases, "dengue_InteractiveCaseCount.html", selfcontained = TRUE)
-```
 
 While the animated density plot in the previous section provided an excellent overview of the temporal flow, this interactive leaflet map offers another perspective that adds more context for our analysis. By overlaying the case data on real world maps of both the light map as well as the satelite imagery map and adding the 'Neighborhoods' shapefile, we can move from abstract coordinates to tangible locations. The layer controls which function as a set of radio buttons to select the basemap to have the data overlayed upon allow for a contextually rich understanding of absolute case counts for each year.
 
@@ -415,7 +410,7 @@ label_2015 <- ~scales::percent(YoY_2015, accuracy = 0.1)
 
 ```{r interactive_map}
 # Load and transform the neighborhood shapefile
-town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_raw <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
 
 # Create the interactive leaflet map
@@ -496,9 +491,7 @@ m <- leaflet(data_sf_wgs84) %>%
 # Display the map
 m
 ```
-```{r}
-htmlwidgets::saveWidget(m, "dengue_YoY_map.html", selfcontained = TRUE)
-```
+
 
 It is not enough to only look at the absolute numbers for the outbreak of dengue fever. We must also look at the changes through time to identify whether there are any temporal trends. Health officals would want to measure key insights such as 50% decrease in a major hotspot or a 500% increase in a new previously safe area. This map visualizes the Year over Year YoY percentage change to provide these temporal insights. We represent these changes by using the color pallets of data points on the map with red points to signify a percentage increase in worsening outbreak while using blue points to show a percentage decrease which represents improving situation compared to the previous year. Finally, grey points indicate areas with no change or no cases in either period of the outbreak.
 
@@ -516,7 +509,7 @@ data_sf_pop <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
 data_sf_pop_wgs84 <- st_transform(data_sf_pop, crs = 4326)
 
 # 2. Load and transform the neighborhood shapefile (if not already loaded)
-town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_raw <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
 
 # --- MAP 1: POPULATION MAP ---
@@ -663,11 +656,6 @@ m_rate_2015
 ```
 
 ```{r}
-library(leaflet)
-library(sf)
-library(htmltools)
-library(scales) # for comma()
-
 # --- 1. DATA PREPARATION ---
 # Ensure we have the correct spatial object with both columns
 # (Assuming data_cleaned has 'Population', 'Rate2015', 'Den2015')
@@ -675,7 +663,7 @@ data_sf_combined <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
 data_sf_combined_wgs84 <- st_transform(data_sf_combined, crs = 4326)
 
 # Load Town Map (Neighborhoods)
-town_map_raw <- st_read("Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
+town_map_raw <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
 
 # --- 2. DEFINE PALETTES ---
