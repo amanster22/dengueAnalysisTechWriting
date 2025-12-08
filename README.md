@@ -28,7 +28,7 @@ We conducted a multistage analysis in R:
 3.  **Interactive Mapping:** Utilizing `leaflet` for layered exploration of specific zones and `plotly` for temporal visualization.
 
 ## Technologies Used
-* **Language:** R (4.x)
+* **Language:** R
 * **Key Libraries:** `tidyverse`, `sf` (spatial vectors), `spdep` (spatial statistics), `leaflet` (interactive maps), `plotly`.
 
 ## Project Structure
