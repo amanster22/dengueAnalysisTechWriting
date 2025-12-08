@@ -779,6 +779,97 @@ m_combined <- leaflet(data_sf_combined_wgs84) %>%
 m_combined
 ```
 
+
+```{r}
+library(spdep)
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# 1. Prepare Spatial Data & Handle NAs
+# Replace NA rates with 0 to prevent errors in localmoran.
+data_lisa_ready <- data_cleaned %>%
+  mutate(across(starts_with("Rate"), ~replace_na(., 0)))
+
+# 2. Create Spatial Weights (k-Nearest Neighbors)
+coords <- cbind(data_lisa_ready$X, data_lisa_ready$Y)
+knn <- knearneigh(coords, k = 6)
+nb <- knn2nb(knn)
+listw <- nb2listw(nb, style = "W")
+
+# 3. Function to Calculate LISA and Classify Clusters
+calculate_lisa <- function(data, variable_name, year_label, listw) {
+  # Extract variable
+  x <- data[[variable_name]]
+  
+  # Calculate Local Moran's I
+  local <- localmoran(x, listw, alternative = "two.sided")
+  df_lisa <- as.data.frame(local)
+  
+  # Extract P-value by INDEX (Column 5) to avoid name mismatch errors
+  p_value <- df_lisa[, 5]
+  
+  # Standardize variable (Z-score)
+  z_x <- (x - mean(x)) / sd(x)
+  
+  # Calculate Spatial Lag
+  lag_x <- lag.listw(listw, z_x)
+  
+  # Classify Clusters
+  df_lisa$Cluster <- case_when(
+    p_value > 0.05 ~ "Not Significant",
+    z_x > 0 & lag_x > 0 ~ "High-High", # Hotspot
+    z_x < 0 & lag_x < 0 ~ "Low-Low",   # Coldspot
+    z_x > 0 & lag_x < 0 ~ "High-Low",  # Spatial Outlier
+    z_x < 0 & lag_x > 0 ~ "Low-High",  # Spatial Outlier
+    TRUE ~ "Not Significant"
+  )
+  
+  # Add coordinates and year
+  df_lisa$X <- data$X
+  df_lisa$Y <- data$Y
+  df_lisa$Year <- year_label
+  
+  return(df_lisa)
+}
+
+# 4. Run Analysis for Each Year
+lisa_2012 <- calculate_lisa(data_lisa_ready, "Rate2012", "2012", listw)
+lisa_2013 <- calculate_lisa(data_lisa_ready, "Rate2013", "2013", listw)
+lisa_2014 <- calculate_lisa(data_lisa_ready, "Rate2014", "2014", listw)
+lisa_2015 <- calculate_lisa(data_lisa_ready, "Rate2015", "2015", listw)
+
+# Combine results
+lisa_all <- bind_rows(lisa_2012, lisa_2013, lisa_2014, lisa_2015)
+
+# 5. Visualization
+lisa_colors <- c(
+  "High-High" = "#FF0000",       # Red (Hotspot)
+  "Low-Low" = "#0000FF",         # Blue (Coldspot)
+  "High-Low" = "#FFC0CB",        # Pink (Outlier)
+  "Low-High" = "#87CEEB",        # Light Blue (Outlier)
+  "Not Significant" = "#eeeeee"  # Grey
+)
+
+ggplot(lisa_all, aes(x = X, y = Y, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.8) +
+  scale_color_manual(values = lisa_colors) +
+  facet_wrap(~Year, ncol = 2) +
+  labs(
+    title = "LISA Cluster Map: Dengue Incidence Rates (2012-2015)",
+    subtitle = "Local Indicators of Spatial Association (Moran's I)",
+    x = "X Coordinate (UTM)",
+    y = "Y Coordinate (UTM)",
+    color = "Cluster Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    strip.text = element_text(face = "bold", size = 14),
+    legend.position = "bottom"
+  )
+```
 ### 8. Conclusion and Future Questions
 
 In our exploratory analysis, we successfully identified the spatial and temporal dynamics of Dengue fever in Mérida from 2012 to 2015. Our data revealed that a significant 2012 outbreak was followed by a two-year period of decline (2013-2014), allowing us to hypothesize that there was a successful containment. However, our findings in the Annual Case Trend Plot (Section 3) and the Animated Spatial Distribution Map (Section 5) indicate there was a powerful and abrupt resurgence in 2015.
