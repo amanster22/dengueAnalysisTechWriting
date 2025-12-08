@@ -24,8 +24,6 @@ We employ a multistage analysis in R:
 
 Data Cleaning: Aggregating annual trends to visualize outbreaks.
 
-Kernel Density Estimation (KDE): creating animated maps to visualize shifting hotspot intensity.
-
 LISA Analysis: Using Anselin's Local Moran's I to identify statistically significant clusters.
 
 Demographic Correlation: linking disease clusters to population density.
