@@ -30,9 +30,10 @@ The raw dataset contains several columns, including SP_ID and CVEGEO, which serv
 Next, we checked the dataframe for missing data because null values can introduce significant bias, propagate errors in calculations, and cause visualization failures. The R console output confirms that all columns returned 0 null values. This finding validates the completeness of our dataset, allowing us to proceed with our analysis without further cleaning procedures, ensuring our results are based on the full set of observations.
 
 ```{r data_loading}
-library(tidyverse)
-library(dplyr)
-library(ggplot2)
+if (!require("spdep")) install.packages("spdep")
+
+# Load Libraries
+library(tidyverse) # Loads dplyr, ggplot2, readr, etc.
 library(plotly)
 library(leaflet) 
 library(sf) 
@@ -40,9 +41,11 @@ library(htmltools)
 library(scales)
 library(spdep)
 
+# Load Data
 data <- read.csv('data/Merida_Den12_13_14_15.csv')
 pop_data <- read.csv('data/merida_census_final.csv')
 
+# Inspect Data
 head(data)
 head(pop_data)
 ```
@@ -210,7 +213,6 @@ fig <- plot_ly(
 fig
 
 ```
-
 
 We can further analyze the evolution dengue virus in the Merida region over a period of time with an animated density chart. By using Plotly, we can plot the position, measured in UTM coordinates (meters), of the annual case counts (2012-2015), allowing us to visualize high-density infected regions in red and low-density regions in white. The animation illustrates how the spatial distribution of the disease fluctuates across the same areas throughout the analyzed timespan.
 
@@ -492,27 +494,27 @@ m <- leaflet(data_sf_wgs84) %>%
 m
 ```
 
-
 It is not enough to only look at the absolute numbers for the outbreak of dengue fever. We must also look at the changes through time to identify whether there are any temporal trends. Health officals would want to measure key insights such as 50% decrease in a major hotspot or a 500% increase in a new previously safe area. This map visualizes the Year over Year YoY percentage change to provide these temporal insights. We represent these changes by using the color pallets of data points on the map with red points to signify a percentage increase in worsening outbreak while using blue points to show a percentage decrease which represents improving situation compared to the previous year. Finally, grey points indicate areas with no change or no cases in either period of the outbreak.
 
 The first layer 2013 vs 2012 visualizes the success of containment efforts after the 2012 outbreak. These trends agree with our findings in section 3 of our analysis where we see a massive decrease in the amount of outbreaks which is also represented here with large quantities of blue points. The 2014 vs 2013 layer shows a more mixed but still generally positive story. Many areas that were blue in the previous layer are now grey indicating they went from some cases to zero or stayed at zero. The overall trend remains one of decline or stabilization which is as expected as the amount decrease is limited compared to the first outbreak year.
 
 The 2015 vs 2014 layer though is showing a different story that starkly contrasts the previous trends. The map is now covered in bright red dots with many representing infinite or extremely high percentage increases as cases jumped from near 0 in 2014 to significant numbers in 2015. This visualization starkly contrasts with the absolute case map of Section 6. While that map showed where the 2015 hotspots were, this map shows the surprising amount of increase of dengue fever occurences representing another outbreak. This highlights the virus's ability to resurge unexpectedly turning previously low risk zones into new hotspots quickly.
 
-```{r}
-# --- RE-LOAD SPATIAL DATA WITH POPULATION ---
-# We must re-create the spatial object using 'data_cleaned' because the 
-# previous section (YoY) overwrote 'data_sf_wgs84' with data that lacked population.
+### 8. Exploratory Analysis 6: Population Density vs. Incidence Rate
 
-# 1. Convert CLEANED data (which contains Population) to sf
+In the previous sections we looked at dengue fever's absolute case counts. However absolute case counts are often not a good indicator for hot spot as population is a major confounding variable in our analysis for hotspots because areas with higher population are much likely to have higher absolute number of people that have been infected. Thus to mitigate this issue of differing populations which in the neighborhoods of Merida we used web scraping on the following site: https://www.citypopulation.de/en/mexico/agglomerida/ to obtain the population of each area within Merida. To isolate the "aggressiveness" of the virus from simple population density, we must analyze the Incidence Rate (cases per 10,000 residents).
+
+#### a. population visualization
+
+```{r}
+
 data_sf_pop <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
 data_sf_pop_wgs84 <- st_transform(data_sf_pop, crs = 4326)
 
-# 2. Load and transform the neighborhood shapefile (if not already loaded)
 town_map_raw <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
 
-# --- MAP 1: POPULATION MAP ---
+# --- POPULATION MAP ---
 
 # Create Palette for Population
 pal_pop <- colorNumeric(
@@ -538,7 +540,7 @@ m_population <- leaflet(data_sf_pop_wgs84) %>%
     data = town_map_wgs84,
     group = "Neighborhoods",
     fillOpacity = 0.1,
-    color = "#ffffff", # White lines show up better on Satellite
+    color = "#ffffff",
     weight = 1,
     opacity = 0.5,
     popup = ~SP_ID
@@ -583,16 +585,18 @@ m_population <- leaflet(data_sf_pop_wgs84) %>%
 m_population
 ```
 
+We first study the pure population count or denominator of our new rate that we are studying. We use a yellow and blue scale to study the population where yellow represents low population while blue represents higher with the scale from 0 to 5000. This visualization confirms our hypothesis that the population of the city is heterogeneous. If dengue fever is purely spread by human to human proximity we would expect the disease hotspots to perfectly mirror these dark blue high-density zones. Another thing to note is that the center of the city is not the area with the highest population in fact some parts in the central city have significantly lower population than the outskirts of the city. 
+
+#### b. 2015 Incidence Rate
+
 ```{r}
-# --- MAP 2: 2015 RATE MAP (Consistent Palette) ---
+# --- 2015 RATE MAP ---
 
 # 1. PREPARE DATA: Create a specific spatial object for Rates
-# We rely on 'data_cleaned' because it contains the calculated 'Rate2015' column.
 data_sf_rates <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
 data_sf_rates_wgs84 <- st_transform(data_sf_rates, crs = 4326)
 
 # 2. Create Palette
-# We use "YlOrRd" (Yellow-Orange-Red) for the infection rate.
 pal_rate_15 <- colorNumeric(
   palette = "YlOrRd",
   domain = data_sf_rates_wgs84$Rate2015,
@@ -606,7 +610,6 @@ popup_rate_15 <- ~lapply(sprintf(
 ), HTML)
 
 # 4. Create Map
-# NOTE: We pass 'data_sf_rates_wgs84' to leaflet(), not the generic 'data_sf_wgs84'
 m_rate_2015 <- leaflet(data_sf_rates_wgs84) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
   addProviderTiles(providers$CartoDB.Positron, group = "Light Map") %>%
@@ -655,26 +658,27 @@ m_rate_2015 <- leaflet(data_sf_rates_wgs84) %>%
 m_rate_2015
 ```
 
+Next we analyze the rate we proposed, where we calculate the predicted number of incidences in 10,000 people by the following formula: infected/population * 10,000, for the year 2015. Using the yellow red scale where yellow means a lower rate while red means a higher rate we have the scale set from 0 to over 1000. 
+
+Unlike the absolute case map (Section 6), which highlights where the most sick people are, this map highlights where the highest probability of getting sick exists. We observe distinct clusters of high infection rates (dark red) that appear locally concentrated rather than randomly distributed across the city
+
+#### c. Combined Analysis
+
 ```{r}
 # --- 1. DATA PREPARATION ---
-# Ensure we have the correct spatial object with both columns
-# (Assuming data_cleaned has 'Population', 'Rate2015', 'Den2015')
 data_sf_combined <- st_as_sf(data_cleaned, coords = c("X", "Y"), crs = 6371)
 data_sf_combined_wgs84 <- st_transform(data_sf_combined, crs = 4326)
 
-# Load Town Map (Neighborhoods)
 town_map_raw <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
 town_map_wgs84 <- st_transform(town_map_raw, crs = 4326)
 
 # --- 2. DEFINE PALETTES ---
-# Palette for Population (Blue/Green)
 pal_pop <- colorNumeric(
   palette = "YlGnBu",
   domain = data_sf_combined_wgs84$Population,
   na.color = "#a0a0a0"
 )
 
-# Palette for Rate (Yellow/Orange/Red) - Represents "Heat"
 pal_rate <- colorNumeric(
   palette = "YlOrRd",
   domain = data_sf_combined_wgs84$Rate2015,
@@ -682,7 +686,6 @@ pal_rate <- colorNumeric(
 )
 
 # --- 3. DEFINE POPUPS ---
-# We create one popup that shows EVERYTHING so it works for both layers
 common_popup <- ~lapply(sprintf(
   "<strong>ID: %s</strong><br/>
    Population: %s<br/>
@@ -709,7 +712,6 @@ m_combined <- leaflet(data_sf_combined_wgs84) %>%
   ) %>%
   
   # C. Layer 1: Population
-  # We make these slightly smaller (radius 5)
   addCircleMarkers(
     group = "Population",
     fillColor = ~pal_pop(Population),
@@ -723,52 +725,52 @@ m_combined <- leaflet(data_sf_combined_wgs84) %>%
   ) %>%
   
   # D. Layer 2: 2015 Rate
-  # We make these slightly larger (radius 8) or the same size depending on preference.
-  # If they are larger, they form a "halo" around the population dot when both are on.
   addCircleMarkers(
     group = "2015 Rate",
     fillColor = ~pal_rate(Rate2015),
-    fillOpacity = 0.6,    # Slightly more transparent to see overlap
-    stroke = FALSE,       # No border for the rate to make it look more like a "glow"
-    radius = 8,           # Larger radius so it's visible behind/around population
+    fillOpacity = 0.6,
+    stroke = FALSE,
+    radius = 8,
     popup = common_popup,
     label = ~paste0("Rate: ", round(Rate2015, 1))
   ) %>%
   
-  # E. Legends (We add both!)
+  # E. Legends
   addLegend(
     pal = pal_pop,
     values = ~Population,
     title = "Population",
     position = "bottomright",
-    group = "Population"  # This binds the legend to the layer toggle!
+    group = "Population"
   ) %>%
   
   addLegend(
     pal = pal_rate,
     values = ~Rate2015,
     title = "Rate (per 10k)",
-    position = "bottomleft", # Put on left to avoid crowding
-    group = "2015 Rate"      # This binds the legend to the layer toggle!
+    position = "bottomleft",
+    group = "2015 Rate"
   ) %>%
   
-  # F. Layer Control ( The Toggles )
+  # F. Layer Control
   addLayersControl(
     baseGroups = c("Satellite", "Light Map"),
     overlayGroups = c("Population", "2015 Rate", "Neighborhoods"),
     options = layersControlOptions(collapsed = FALSE) 
-  ) %>%
+  )
   
-  # G. Hide one layer by default? (Optional)
-  # If you want them both visible at start, comment this out.
-  # If you want to start with just Rate, hide Population:
-  hideGroup("Population")
+  # G. Hide one layer by default
+  #hideGroup("Population")
 
 # Display
 m_combined
 ```
 
+This final map overlays both the population density and the 2015 incidence rate which allows us to direclty compare the two results using layer control. 
 
+This comparison reveals that Dengue incidences in Merida are not strictly correlated with population density. By toggling between the layers, we can identify areas with high infection rates (dark red on the Rate layer) that do not correspond to the highest population centers (dark blue on the Population layer). This disconnect suggests that environmental factors such as the vector breeding sites identified in the Ovitrap data likely play a more significant role in driving the 2015 resurgence than population density alone. The virus is more dependent on specific local conditions to spread efficiently resulting in high risk zones even in areas that are not the most densely populated.
+
+### 9. Exploratory Analysis 7: LISA Analysis
 ```{r}
 
 # Get rid of NA values
