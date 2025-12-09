@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 In this exploratory data analysis, our group examines dengue fever cases in the city of Mérida, Mexico, using data provided by Professor Clennon of the Emory Environmental Science Department. Dengue fever is a mosquito-borne viral infection caused by the dengue virus, which poses a significant public health concern in tropical and subtropical regions.
 
-Some of dengue fever’s most common symptoms include sudden drops in blood pressure, nausea, and muscle pain. Researchers have found that Merida, the capital of the state of Yucatán, experiences recurrent dengue outbreaks due to its tropical climate, seasonal rainfall and standing water, and dense urban population density. 
+Some of dengue fever’s most common symptoms include sudden drops in blood pressure, nausea, and muscle pain. Researchers have found that Merida, the capital of the state of Yucatán, experiences recurrent dengue outbreaks due to its tropical climate, seasonal rainfall and standing water, and dense urban population density.
 
 Our group is interested in public health, epidemiology, and the positive effect that well-developed data analysis can have on urban welfare. In part, this interest derives from our experiences with the COVID-19 pandemic and its widespread reporting on its pathology, treatment, and mitigation. Dengue Fever's effects are similar to COVID-19's, and the disease similarly impacts communities worldwide. However, its relatively slower spread and its prevalence predominantly in tropical areas with underdeveloped healthcare infrastructure have led to severe neglect compared to other dangerous diseases. This study is primarily an exercise in geospatial and temporal analysis of a viral disease.
 
@@ -49,6 +49,7 @@ pop_data <- read.csv('data/merida_census_final.csv')
 head(data)
 head(pop_data)
 ```
+
 ```{r}
 # 1. Ensure the ID columns are characters to prevent scientific notation issues during joining
 data <- data %>% mutate(CVEGEO = as.character(CVEGEO))
@@ -84,7 +85,6 @@ print(na_counts)
 
 tail(data_cleaned)
 ```
-
 
 ### 3. Exploratory Analysis 1: Aggregate City-Wide Trends
 
@@ -124,16 +124,18 @@ ggplot(data_summary, aes(x = Year)) +
   )
 ```
 
-When it comes to diseases, outbreaks, and other public health concerns, it is crucial to monitor the volume of cases to understand if the outbreak is being contained. Starting off as simply as possible, we created a bar graph that summarizes the broader statistics of our dengue fever dataset in Merida – more specifically, we created a visualization that summarizes the amount of dengue fever cases from 2012 to 2015. This was conducted by grouping the cases by what year they were from, and then counting how many cases were in each year. The graph shows 2012 having the highest volume of dengue fever cases of almost 10,000, which has a significant dropoff in 2013. Following this trend, 2014 also sees a decline in total dengue fever cases, until another sharp increase of cases comes in 2015 of around 7,500 cases. 
+When it comes to diseases, outbreaks, and other public health concerns, it is crucial to monitor the volume of cases to understand if the outbreak is being contained. Starting off as simply as possible, we created a bar graph that summarizes the broader statistics of our dengue fever dataset in Merida – more specifically, we created a visualization that summarizes the amount of dengue fever cases from 2012 to 2015. This was conducted by grouping the cases by what year they were from, and then counting how many cases were in each year. The graph shows 2012 having the highest volume of dengue fever cases of almost 10,000, which has a significant dropoff in 2013. Following this trend, 2014 also sees a decline in total dengue fever cases, until another sharp increase of cases comes in 2015 of around 7,500 cases.
 
 Despite being able to visually see the fluctuations in volume of dengue fever cases, our group decided to create a percent change, year-over-year, line visualization over the same chart. This method of calculating percent change is useful in tracking the rate of increase or decrease of the dengue fever, which allows us to not only understand the spread of the disease, but how quickly it is spreading. By using geom_line in our visualization, the red line helps our audience understand the relative changes in dengue fever cases over the years. When the percent change is sharply negative, like in 2013 and 2014, that could indicate successful containment plans, while sharp positive changes in the red line could signal a public health crisis.
 
-The pertinence of this visualization is that it helps with public health tracking and surveillance. Despite being a more general statistical visualization, this graph can help track the trends of how quickly dengue fever is spreading in Merida, while also assessing the effectiveness of interventions in certain years, assuming that certain confounding variables are controlled for – other variables such as seasonal changes and weather variation could certainly impact our future findings. Ultimately, data tracking leads to action, and in the case of dengue fever, it can lead to mosquito control initiatives or vaccination campaigns. 
+The pertinence of this visualization is that it helps with public health tracking and surveillance. Despite being a more general statistical visualization, this graph can help track the trends of how quickly dengue fever is spreading in Merida, while also assessing the effectiveness of interventions in certain years, assuming that certain confounding variables are controlled for – other variables such as seasonal changes and weather variation could certainly impact our future findings. Ultimately, data tracking leads to action, and in the case of dengue fever, it can lead to mosquito control initiatives or vaccination campaigns.
 
 This initial analysis provides a strong foundation for conducting a geospatial analysis on where these dengue fever cases are specifically occurring.
 
 ### 4. Exploratory Analysis 2: Ovitrap Data
+
 Before we further analyze dengue incidence over time, let's briefly look at some data for mosquito ovitraps. Ovitraps allow researchers to estimate the number of mosquitoes in an area by replicating breeding environments and measuring egg count. As dengue is a mosquito-borne illness, we should keep in mind the relative density of mosquito eggs as we look at disease hot spots later on. For the purposes of this analysis, we will not run statistical tests examining the exact association between estimated mosquito density and dengue incidence, as we intend to focus more on geospatial and temporal analytics.
+
 ```{r mapping_plot}
 
 map <- st_read("data/Merida_S25/Merida_Den12_13_14_15/Merida_Den12_13_14_15.shp")
@@ -502,7 +504,7 @@ The 2015 vs 2014 layer though is showing a different story that starkly contrast
 
 ### 8. Exploratory Analysis 6: Population Density vs. Incidence Rate
 
-In the previous sections we looked at dengue fever's absolute case counts. However absolute case counts are often not a good indicator for hot spot as population is a major confounding variable in our analysis for hotspots because areas with higher population are much likely to have higher absolute number of people that have been infected. Thus to mitigate this issue of differing populations which in the neighborhoods of Merida we used web scraping on the following site: https://www.citypopulation.de/en/mexico/agglomerida/ to obtain the population of each area within Merida. To isolate the "aggressiveness" of the virus from simple population density, we must analyze the Incidence Rate (cases per 10,000 residents).
+In the previous sections we looked at dengue fever's absolute case counts. However absolute case counts are often not a good indicator for hot spot as population is a major confounding variable in our analysis for hotspots because areas with higher population are much likely to have higher absolute number of people that have been infected. Thus to mitigate this issue of differing populations which in the neighborhoods of Merida we used web scraping on the following site: <https://www.citypopulation.de/en/mexico/agglomerida/> to obtain the population of each area within Merida. To isolate the "aggressiveness" of the virus from simple population density, we must analyze the Incidence Rate (cases per 10,000 residents).
 
 #### a. Population visualization
 
@@ -585,7 +587,7 @@ m_population <- leaflet(data_sf_pop_wgs84) %>%
 m_population
 ```
 
-We first study the pure population count or denominator of our new rate that we are studying. We use a yellow and blue scale to study the population where yellow represents low population while blue represents higher with the scale from 0 to 5000. This visualization confirms our hypothesis that the population of the city is heterogeneous. If dengue fever is purely spread by human to human proximity we would expect the disease hotspots to perfectly mirror these dark blue high-density zones. Another thing to note is that the center of the city is not the area with the highest population in fact some parts in the central city have significantly lower population than the outskirts of the city. 
+We first study the pure population count or denominator of our new rate that we are studying. We use a yellow and blue scale to study the population where yellow represents low population while blue represents higher with the scale from 0 to 5000. This visualization confirms our hypothesis that the population of the city is heterogeneous. If dengue fever is purely spread by human to human proximity we would expect the disease hotspots to perfectly mirror these dark blue high-density zones. Another thing to note is that the center of the city is not the area with the highest population in fact some parts in the central city have significantly lower population than the outskirts of the city.
 
 #### b. 2015 Incidence Rate
 
@@ -658,7 +660,7 @@ m_rate_2015 <- leaflet(data_sf_rates_wgs84) %>%
 m_rate_2015
 ```
 
-Next we analyze the rate we proposed, where we calculate the predicted number of incidences in 10,000 people by the following formula: infected/population * 10,000, for the year 2015. Using the yellow red scale where yellow means a lower rate while red means a higher rate we have the scale set from 0 to over 1000. 
+Next we analyze the rate we proposed, where we calculate the predicted number of incidences in 10,000 people by the following formula: infected/population \* 10,000, for the year 2015. Using the yellow red scale where yellow means a lower rate while red means a higher rate we have the scale set from 0 to over 1000.
 
 Unlike the absolute case map (Section 6), which highlights where the most sick people are, this map highlights where the highest probability of getting sick exists. We observe distinct clusters of high infection rates (dark red) that appear locally concentrated rather than randomly distributed across the city
 
@@ -766,11 +768,12 @@ m_combined <- leaflet(data_sf_combined_wgs84) %>%
 m_combined
 ```
 
-This final map overlays both the population density and the 2015 incidence rate which allows us to direclty compare the two results using layer control. 
+This final map overlays both the population density and the 2015 incidence rate which allows us to direclty compare the two results using layer control.
 
 This comparison reveals that Dengue incidences in Merida are not strictly correlated with population density. By toggling between the layers, we can identify areas with high infection rates (dark red on the Rate layer) that do not correspond to the highest population centers (dark blue on the Population layer). This disconnect suggests that environmental factors such as the vector breeding sites identified in the Ovitrap data likely play a more significant role in driving the 2015 resurgence than population density alone. The virus is more dependent on specific local conditions to spread efficiently resulting in high risk zones even in areas that are not the most densely populated.
 
 ### 9. Exploratory Analysis 7: LISA Analysis
+
 ```{r}
 
 # Get rid of NA values
@@ -906,6 +909,7 @@ leaflet() %>%
     options = layersControlOptions(collapsed = FALSE)
   )
 ```
+
 This final analysis utilizes local indicator of spatial association (LISA). High-high clusters represent areas with high dengue incidence surrounded by other areas of high incidence. This means that they are particular centers of epidemiological interest. Conversely, low-high clusters represent areas of low incidence surrounded by areas of relatively high incidence. These areas are also important to study because their relative resistance to disease spread could lend important insight into disease mitigation strategy that can be applied to other areas. We can see that high-high clusters remain in the center of the city and progressively expand throughout the years. New hotspots also emerge in the southwest of the city and clusters disappear from the northeast.
 
 ### 8. Conclusion and Future Questions
